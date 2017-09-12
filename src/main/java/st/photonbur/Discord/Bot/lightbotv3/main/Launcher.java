@@ -10,6 +10,6 @@ public class Launcher {
     }
 
     private void shutdown() {
-
+        Logger.shutdown();
     }
 }

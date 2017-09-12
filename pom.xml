@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>st.photonbur.Discord.Bot.lightbotv3</groupId>
-    <artifactId>Lighthouse</artifactId>
-    <version>0.1</version>
+    <groupId>st.photonbur.Discord.Bot</groupId>
+    <artifactId>LightBot</artifactId>
+    <version>3.0.0</version>
     <build>
         <plugins>
             <plugin>
