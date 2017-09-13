@@ -1,1 +1,6 @@
 # Created by .ignore support plugin (hsz.mobi)
+.idea/
+LightBotv3.iml
+src/main/java/META-INF/
+src/main/resources/
+src/test/
