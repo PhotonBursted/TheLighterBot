@@ -65,7 +65,7 @@ abstract class Command {
      *
      * @param msg The message to display
      */
-    static void handleError(MessageContent msg) {
+    void handleError(MessageContent msg) {
         handleError(msg.getMessage());
     }
 
@@ -74,7 +74,7 @@ abstract class Command {
      *
      * @param msg The message to display
      */
-    private static void handleError(String msg) {
+    private void handleError(String msg) {
         // Send a message indicating the error
         DiscordController.sendMessage(CommandParser.getLastEvent(), msg, 10);
         // Delete both messages after 10 seconds
