@@ -14,4 +14,4 @@ As of now, it features commands for creating channels, making them permanent, li
 For now, this will purely be a rebuild. This means its sole purpose will be to build the features back up with a proper structure backing them. Possibly things will be added if the time comes, but it would have to be pretty major.
 
 <h3>Technology</h3>
-For this, I'm using IntelliJ IDEA Ultimate as IDE. Added to that I'm using the JDA library for interfacing with Discord and Gson for interacting with the JSON config files.
+For this, I'm using <a href="https://www.jetbrains.com/idea">IntelliJ IDEA Ultimate</a> as IDE. Added to that I'm using the <a href="https://github.com/DV8FromTheWorld/JDA">JDA</a> library for interfacing with Discord and Gson for interacting with the JSON config files.
