@@ -3,18 +3,19 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.entity.Message;
+import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class CommandParser extends ListenerAdapter {
-    private static final String SEP_SPACE = " ";
+    private static final String SEP_SPACE = "\\s+";
 
+    private ArrayDeque<String> input;
     private int level;
-    private String msg;
 
     private static Set<Command> commands;
     private static GuildMessageReceivedEvent lastEvent;
@@ -27,22 +28,24 @@ public class CommandParser extends ListenerAdapter {
         return lastEvent;
     }
 
-    private void handleError(GuildMessageReceivedEvent ev, Message msg) {
-        handleError(ev, msg.getMessage());
+    void handleError(MessageContent msg) {
+        handleError(msg.getMessage());
     }
 
-    private void handleError(GuildMessageReceivedEvent ev, String msg) {
-        DiscordController.sendMessage(ev, msg, 10);
-        ev.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
+    private void handleError(String msg) {
+        DiscordController.sendMessage(lastEvent, msg, 10);
+        lastEvent.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
     }
 
     // Method checking if the string is part of a command, trimming up the message in the process
     boolean messageIsCommand(String command) {
+        String elem = input.getFirst();
+
         // Checks if the message complies with being a command
-        boolean success = msg.startsWith((level == 0 ? DiscordController.getCommandPrefix() : "") + command);
+        boolean success = elem.equals((level == 0 ? DiscordController.getCommandPrefix() : "") + command);
         // If so, cut the first part of the message off
         if (success) {
-            msg = String.join(SEP_SPACE, Arrays.copyOfRange(msg.split(SEP_SPACE), 1, msg.split(SEP_SPACE).length));
+            input.pop();
             level++;
         }
 
@@ -51,15 +54,17 @@ public class CommandParser extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent ev) {
-        msg = ev.getMessage().getRawContent();
+        String msg = ev.getMessage().getRawContent();
         level = 0;
+
+        input.addAll(Arrays.asList(msg.split(SEP_SPACE)));
 
         Command targetCmd = commands.stream()
                 .filter(cmd -> cmd.getAliases().stream().anyMatch(this::messageIsCommand))
                 .findFirst().orElse(null);
 
         if (targetCmd != null) {
-            targetCmd.execute(msg);
+            targetCmd.execute(input);
         }
     }
 
