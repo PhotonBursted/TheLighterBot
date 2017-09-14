@@ -77,6 +77,7 @@ public class DiscordController {
                     .setToken(token)
                     .addEventListener(new CommandParser())
                     .buildBlocking();
+
         } catch (LoginException | InterruptedException | RateLimitedException ex) {
             ex.printStackTrace();
         }
