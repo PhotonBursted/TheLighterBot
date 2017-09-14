@@ -8,6 +8,7 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
+import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 
 import javax.security.auth.login.LoginException;
@@ -49,11 +50,11 @@ public class DiscordController {
         ).complete();
     }
 
-    public static void sendMessage(GuildMessageReceivedEvent e, st.photonbur.Discord.Bot.lightbotv3.entity.Message msg) {
+    public static void sendMessage(GuildMessageReceivedEvent e, MessageContent msg) {
         sendMessage(e, msg, 0);
     }
 
-    public static void sendMessage(GuildMessageReceivedEvent e, st.photonbur.Discord.Bot.lightbotv3.entity.Message msg, long secondsBeforeDeletion) {
+    public static void sendMessage(GuildMessageReceivedEvent e, MessageContent msg, long secondsBeforeDeletion) {
         sendMessage(e, msg.getMessage(), secondsBeforeDeletion);
     }
 

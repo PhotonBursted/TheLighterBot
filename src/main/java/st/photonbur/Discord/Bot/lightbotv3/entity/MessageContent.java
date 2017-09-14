@@ -1,9 +1,9 @@
 package st.photonbur.Discord.Bot.lightbotv3.entity;
 
-public enum Message {
+public enum MessageContent {
     ;
 
-    Message(String message) {
+    MessageContent(String message) {
         this.message = message;
     }
 
