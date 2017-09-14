@@ -3,10 +3,12 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Used as a template for commands.
@@ -57,6 +59,27 @@ abstract class Command {
      * @return The explanation of how to use the command
      */
     abstract String getUsage();
+
+    /**
+     * Handles any errors that might occur during the handling of the input for a command.
+     *
+     * @param msg The message to display
+     */
+    static void handleError(MessageContent msg) {
+        handleError(msg.getMessage());
+    }
+
+    /**
+     * Handles any errors that might occur during the handling of the input for a command.
+     *
+     * @param msg The message to display
+     */
+    private static void handleError(String msg) {
+        // Send a message indicating the error
+        DiscordController.sendMessage(CommandParser.getLastEvent(), msg, 10);
+        // Delete both messages after 10 seconds
+        CommandParser.getLastEvent().getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
+    }
 
     /**
      * Checks whether the first part of the stored input matches the query.
