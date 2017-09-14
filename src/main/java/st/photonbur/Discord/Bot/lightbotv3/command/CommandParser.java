@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 public class CommandParser extends ListenerAdapter {
     private static final String SEP_SPACE = "\\s+";
 
-    private Set<Command> commands;
-    private GuildMessageReceivedEvent lastEvent;
+    private static GuildMessageReceivedEvent lastEvent;
+    private final Set<Command> commands;
 
     public CommandParser() {
         commands = new HashSet<>();
@@ -22,7 +22,7 @@ public class CommandParser extends ListenerAdapter {
         Collections.addAll(commands, cmds);
     }
 
-    public GuildMessageReceivedEvent getLastEvent() {
+    public static GuildMessageReceivedEvent getLastEvent() {
         return lastEvent;
     }
 
