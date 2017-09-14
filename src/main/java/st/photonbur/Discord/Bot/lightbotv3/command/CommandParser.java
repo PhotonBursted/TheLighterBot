@@ -5,26 +5,24 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class CommandParser extends ListenerAdapter {
     private static final String SEP_SPACE = "\\s+";
 
-    private ArrayDeque<String> input;
-    private int level;
+    private Set<Command> commands;
+    private GuildMessageReceivedEvent lastEvent;
 
-    private static Set<Command> commands;
-    private static GuildMessageReceivedEvent lastEvent;
+    public CommandParser() {
+        commands = new HashSet<>();
+    }
 
-    public static void addCommand(Command... cmds) {
+    public void addCommand(Command... cmds) {
         Collections.addAll(commands, cmds);
     }
 
-    public static GuildMessageReceivedEvent getLastEvent() {
+    public GuildMessageReceivedEvent getLastEvent() {
         return lastEvent;
     }
 
@@ -37,38 +35,24 @@ public class CommandParser extends ListenerAdapter {
         lastEvent.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
     }
 
-    // Method checking if the string is part of a command, trimming up the message in the process
-    boolean messageIsCommand(String command) {
-        String elem = input.getFirst();
-
-        // Checks if the message complies with being a command
-        boolean success = elem.equals((level == 0 ? DiscordController.getCommandPrefix() : "") + command);
-        // If so, cut the first part of the message off
-        if (success) {
-            input.pop();
-            level++;
-        }
-
-        return success;
-    }
-
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent ev) {
         String msg = ev.getMessage().getRawContent();
-        level = 0;
 
+        ArrayDeque<String> input = new ArrayDeque<>();
         input.addAll(Arrays.asList(msg.split(SEP_SPACE)));
 
         Command targetCmd = commands.stream()
-                .filter(cmd -> cmd.getAliases().stream().anyMatch(this::messageIsCommand))
+                .filter(cmd -> cmd.getAliases().stream().anyMatch(alias -> cmd.messageIsCommand(input)))
                 .findFirst().orElse(null);
 
         if (targetCmd != null) {
-            targetCmd.execute(input);
+            ev.getMessage().delete().reason("The message was part of a command.").queue();
+            targetCmd.setInput(input).execute();
         }
     }
 
-    public static void removeCommand(Command... cmds) {
+    public void removeCommand(Command... cmds) {
         commands.removeAll(Arrays.asList(cmds));
     }
 }
