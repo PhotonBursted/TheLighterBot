@@ -60,14 +60,18 @@ public class CommandParser extends ListenerAdapter {
      */
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent ev) {
+        // Get the raw message. This includes all markup as well.
         String msg = ev.getMessage().getRawContent();
 
+        // Create a queue of the input. Every space separated piece of the string is a new element
         LinkedBlockingQueue<String> input = new LinkedBlockingQueue<>(Arrays.asList(msg.split(SEP_SPACE)));
 
+        // Try to find if a command was referenced, and if there was any, find which
         Command targetCmd = commands.stream()
                 .filter(cmd -> cmd.getAliases().stream().anyMatch(alias -> cmd.messageIsCommand(input)))
                 .findFirst().orElse(null);
 
+        // If a command was referenced, delete the message and execute the command
         if (targetCmd != null) {
             ev.getMessage().delete().reason("The message was part of a command.").queue();
             lastEvent = ev;
