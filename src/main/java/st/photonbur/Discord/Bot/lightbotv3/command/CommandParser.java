@@ -3,7 +3,11 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class CommandParser extends ListenerAdapter {
     /**
@@ -18,9 +22,9 @@ public class CommandParser extends ListenerAdapter {
     /**
      * The commands currently registered
      */
-    private final Set<Command> commands;
+    private static final Set<Command> commands;
 
-    public CommandParser() {
+    static  {
         commands = new HashSet<>();
     }
 
@@ -36,8 +40,17 @@ public class CommandParser extends ListenerAdapter {
      *
      * @param cmds The commands to register
      */
-    public void addCommand(Command... cmds) {
+    public static void addCommand(Command... cmds) {
         Collections.addAll(commands, cmds);
+    }
+
+    /**
+     * Unregisters a command, stopping it from being identified as a new message comes in
+     *
+     * @param cmds The commands to remove from the registry
+     */
+    public static void removeCommand(Command... cmds) {
+        commands.removeAll(Arrays.asList(cmds));
     }
 
     /**
@@ -49,8 +62,7 @@ public class CommandParser extends ListenerAdapter {
     public void onGuildMessageReceived(GuildMessageReceivedEvent ev) {
         String msg = ev.getMessage().getRawContent();
 
-        ArrayDeque<String> input = new ArrayDeque<>();
-        input.addAll(Arrays.asList(msg.split(SEP_SPACE)));
+        LinkedBlockingQueue<String> input = new LinkedBlockingQueue<>(Arrays.asList(msg.split(SEP_SPACE)));
 
         Command targetCmd = commands.stream()
                 .filter(cmd -> cmd.getAliases().stream().anyMatch(alias -> cmd.messageIsCommand(input)))
@@ -58,16 +70,7 @@ public class CommandParser extends ListenerAdapter {
 
         if (targetCmd != null) {
             ev.getMessage().delete().reason("The message was part of a command.").queue();
-            targetCmd.setInput(input).execute();
+            targetCmd.prepareWithInput(input).executeCmd();
         }
-    }
-
-    /**
-     * Unregisters a command, stopping it from being identified as a new message comes in
-     *
-     * @param cmds The commands to remove from the registry
-     */
-    public void removeCommand(Command... cmds) {
-        commands.removeAll(Arrays.asList(cmds));
     }
 }

@@ -2,12 +2,13 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 
-import java.util.ArrayDeque;
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,10 +17,14 @@ import java.util.concurrent.TimeUnit;
  */
 abstract class Command {
     /**
+     * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
+     */
+    GuildMessageReceivedEvent ev;
+    /**
      * A place to store the input of a user.
      * This input will be condensed out of a message and supplied by a {@link CommandParser CommandParser} if it is targeted at this command.
      */
-    ArrayDeque<String> input;
+    LinkedBlockingQueue<String> input;
 
     /**
      * Checks whether a member is actually allowed execution of this command.
@@ -34,7 +39,21 @@ abstract class Command {
     /**
      * Method to be implemented with the behaviour and actions the command should have.
      */
-    abstract void execute();
+    abstract void execute() throws RateLimitedException;
+
+    /**
+     * Called by the {@link CommandParser} to execute the command.
+     * This method will also carry out last preparations before actually executing the command.
+     */
+    void executeCmd() {
+        try {
+            this.ev = CommandParser.getLastEvent();
+
+            execute();
+        } catch (RateLimitedException ex) {
+            ex.printStackTrace();
+        }
+    }
 
     /**
      * Method to be implemented with aliases of the command.
@@ -52,7 +71,7 @@ abstract class Command {
      * Method to be implemented with the permissions a user should possess in order to be allowed to execute this command.
      * @return The list of permissions needed to perform the command
      */
-    abstract List<Permission> getPermissionsRequired();
+    abstract Set<Permission> getPermissionsRequired();
 
     /**
      * Method to be implemented with an explanation of the usage of this command.
@@ -74,7 +93,16 @@ abstract class Command {
      *
      * @param msg The message to display
      */
-    private void handleError(String msg) {
+    void handleError(MessageContent msg, String... s) {
+        handleError(MessageContent.format(msg, s));
+    }
+
+    /**
+     * Handles any errors that might occur during the handling of the input for a command.
+     *
+     * @param msg The message to display
+     */
+    void handleError(String msg) {
         // Send a message indicating the error
         DiscordController.sendMessage(CommandParser.getLastEvent(), msg, 10);
         // Delete both messages after 10 seconds
@@ -97,7 +125,7 @@ abstract class Command {
      * @param input The input to match from
      * @return Whether or not the input was targeted at this command
      */
-    boolean messageIsCommand(ArrayDeque<String> input) {
+    boolean messageIsCommand(LinkedBlockingQueue<String> input) {
         return messageIsCommand("", input);
     }
 
@@ -109,19 +137,19 @@ abstract class Command {
      * @return Whether or not the input was targeted at this command
      */
     // Method checking if the string is part of a command, trimming up the message in the process
-    private boolean messageIsCommand(String query, ArrayDeque<String> input) {
+    private boolean messageIsCommand(String query, LinkedBlockingQueue<String> input) {
         boolean success;
 
         // Checks if the input complies with being a command or argument
         if (query.equals("")) {
-            success = this.getAliases().stream().anyMatch(alias -> alias.equals(input.getFirst()));
+            success = this.getAliases().stream().anyMatch(alias -> alias.equals(input.peek()));
         } else {
-            success = input.getFirst().equals(DiscordController.getCommandPrefix() + query);
+            success = input.peek().equals(DiscordController.getCommandPrefix() + query);
         }
 
         // If so, cut the first part of the input off
         if (success) {
-            input.pop();
+            input.poll();
         }
 
         return success;
@@ -133,7 +161,7 @@ abstract class Command {
      * @param args The arguments the user specified in their message
      * @return This instance (for chaining purposes)
      */
-    Command setInput(ArrayDeque<String> args) {
+    Command prepareWithInput(LinkedBlockingQueue<String> args) {
         this.input = args;
         return this;
     }
