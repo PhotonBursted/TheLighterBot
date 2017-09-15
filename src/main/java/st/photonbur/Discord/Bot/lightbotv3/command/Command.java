@@ -142,9 +142,9 @@ abstract class Command {
 
         // Checks if the input complies with being a command or argument
         if (query.equals("")) {
-            success = this.getAliases().stream().anyMatch(alias -> alias.equals(input.peek()));
+            success = this.getAliases().stream().anyMatch(alias -> alias.equalsIgnoreCase(input.peek()));
         } else {
-            success = input.peek().equals(DiscordController.getCommandPrefix() + query);
+            success = input.peek().equalsIgnoreCase(DiscordController.getCommandPrefix() + query);
         }
 
         // If so, cut the first part of the input off
