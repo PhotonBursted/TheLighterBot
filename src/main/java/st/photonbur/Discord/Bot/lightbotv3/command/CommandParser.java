@@ -70,6 +70,8 @@ public class CommandParser extends ListenerAdapter {
 
         if (targetCmd != null) {
             ev.getMessage().delete().reason("The message was part of a command.").queue();
+            lastEvent = ev;
+
             targetCmd.prepareWithInput(input).executeCmd();
         }
     }
