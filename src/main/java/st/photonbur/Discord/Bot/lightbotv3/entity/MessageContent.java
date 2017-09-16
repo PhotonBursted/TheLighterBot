@@ -16,7 +16,7 @@ public enum MessageContent {
     private final String message;
 
     public static String format(MessageContent mc, String... s) {
-        return String.format(mc.getMessage(), s);
+        return String.format(mc.getMessage(), (Object[]) s);
     }
 
     public String getMessage() {

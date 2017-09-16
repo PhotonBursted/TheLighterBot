@@ -10,6 +10,7 @@ import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
+import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
@@ -54,6 +55,13 @@ public class DiscordController {
 
         // Start up and log in
         start();
+    }
+
+    /**
+     * @return The instance of the Discord interface
+     */
+    public JDA getBot() {
+        return bot;
     }
 
     /**
@@ -129,23 +137,18 @@ public class DiscordController {
     }
 
     /**
-     * @return The instance of the Discord interface
-     */
-    public JDA getBot() {
-        return bot;
-    }
-
-    /**
      * Starts up a connection with Discord, initializing an instance of the JDA library.
      * This also connects the CommandParser so that messages can be caught and interpreted for commands.
      *
      * @see CommandParser
      */
     private void start() {
+        Logger.log("Logging in to Discord...");
+
         try {
             bot = new JDABuilder(AccountType.BOT)
                     .setToken(token)
-                    .addEventListener(new CommandParser())
+                    .addEventListener(new CommandParser(), l.getChannelController())
                     .buildBlocking();
 
         } catch (LoginException | InterruptedException | RateLimitedException ex) {

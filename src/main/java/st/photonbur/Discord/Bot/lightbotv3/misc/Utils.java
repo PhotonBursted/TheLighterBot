@@ -5,8 +5,10 @@ import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
 public class Utils {
@@ -87,5 +89,11 @@ public class Utils {
     public static String userAsString(User user) {
         return String.format("%s#%s",
                 user.getName(), user.getDiscriminator());
+    }
+
+    public static String drainQueueToString(LinkedBlockingQueue<String> input) {
+        ArrayList<String> inputParts = new ArrayList<>();
+        input.drainTo(inputParts);
+        return String.join(" ", inputParts.toArray(new String[inputParts.size()]));
     }
 }
