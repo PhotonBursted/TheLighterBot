@@ -12,6 +12,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Stream;
 
 public class Utils {
+    public static String drainQueueToString(LinkedBlockingQueue<String> input) {
+        ArrayList<String> inputParts = new ArrayList<>();
+        input.drainTo(inputParts);
+        return String.join(" ", inputParts.toArray(new String[inputParts.size()]));
+    }
+
     public static String getFetchedChannelMapAsString(Map<VoiceChannel, TextChannel> map) {
         StringBuilder msg = new StringBuilder();
 
@@ -55,6 +61,10 @@ public class Utils {
         return po;
     }
 
+    public static boolean hasLimit(VoiceChannel vc) {
+        return vc.getUserLimit() >= 1 && vc.getUserLimit() <= 99;
+    }
+
     public static String ircify(String s) {
         return Normalizer.normalize(s.toLowerCase(), Normalizer.Form.NFD).replace(" ", "-").replaceAll("[^a-z0-9-]", "").replaceAll("[^\\p{ASCII}]", "");
     }
@@ -89,11 +99,5 @@ public class Utils {
     public static String userAsString(User user) {
         return String.format("%s#%s",
                 user.getName(), user.getDiscriminator());
-    }
-
-    public static String drainQueueToString(LinkedBlockingQueue<String> input) {
-        ArrayList<String> inputParts = new ArrayList<>();
-        input.drainTo(inputParts);
-        return String.join(" ", inputParts.toArray(new String[inputParts.size()]));
     }
 }

@@ -264,7 +264,7 @@ public class ChannelController extends ListenerAdapter {
     @Override
     public void onGuildVoiceJoin(GuildVoiceJoinEvent ev) {
         logEvent(EventType.JOIN, ev.getMember(), ev.getChannelJoined());
-        respondToJoin(ev.getChannelJoined());
+        respondToJoin(ev.getChannelJoined(), ev.getMember());
 
         informUserAbout(EventType.JOIN, ev.getMember(), ev.getChannelJoined());
     }
@@ -272,7 +272,7 @@ public class ChannelController extends ListenerAdapter {
     @Override
     public void onGuildVoiceMove(GuildVoiceMoveEvent ev) {
         logEvent(null, ev.getMember(), ev.getChannelLeft(), ev.getChannelJoined());
-        respondToMove(ev.getChannelJoined(), ev.getChannelLeft());
+        respondToMove(ev.getChannelJoined(), ev.getChannelLeft(), ev.getMember());
 
         informUserAbout(EventType.MOVE, ev.getMember(), ev.getChannelJoined(), ev.getChannelLeft());
     }
@@ -280,25 +280,45 @@ public class ChannelController extends ListenerAdapter {
     @Override
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent ev) {
         logEvent(EventType.LEAVE, ev.getMember(), ev.getChannelLeft());
-        respondToLeave(ev.getChannelLeft());
+        respondToLeave(ev.getChannelLeft(), ev.getMember());
 
         informUserAbout(EventType.LEAVE, ev.getMember(), ev.getChannelLeft());
     }
 
-    private void respondToJoin(VoiceChannel vc) {
+    private void respondToJoin(VoiceChannel vc, Member m) {
         if (timeoutCandidates.containsKey(vc)) {
             timeoutCandidates.get(vc).shutdown();
         }
+
+        if (linkedChannels.containsKey(vc)) {
+            if (Utils.hasLimit(vc)) {
+                try {
+                    Utils.getPO(linkedChannels.get(vc), m).getManagerUpdatable().grant(Permission.MESSAGE_READ).update().reason("The channel was joined and is limited, requiring members to see the linked text channel").queue();
+                } catch (RateLimitedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
     }
 
-    private void respondToMove(VoiceChannel vcj, VoiceChannel vcl) {
-        respondToJoin(vcj);
-        respondToLeave(vcl);
+    private void respondToMove(VoiceChannel vcj, VoiceChannel vcl, Member m) {
+        respondToJoin(vcj, m);
+        respondToLeave(vcl, m);
     }
 
-    private void respondToLeave(VoiceChannel vc) {
+    private void respondToLeave(VoiceChannel vc, Member m) {
         if (vc.getMembers().size() == 0 && linkedChannels.containsKey(vc) && !permChannels.containsKey(vc)) {
             deleteLinkedChannels(vc);
+        }
+
+        if (linkedChannels.containsKey(vc)) {
+            if (Utils.hasLimit(vc)) {
+                try {
+                    Utils.removePermissionsFrom(Utils.getPO(linkedChannels.get(vc), m), "The channel was left and is limited, requiring non-members to not see the associated text channel", Permission.MESSAGE_READ);
+                } catch (RateLimitedException ex) {
+                    ex.printStackTrace();
+                }
+            }
         }
     }
 
