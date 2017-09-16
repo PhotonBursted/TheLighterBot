@@ -6,6 +6,7 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
+import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -142,14 +143,25 @@ abstract class Command {
 
         // Checks if the input complies with being a command or argument
         if (query.equals("")) {
-            success = this.getAliases().stream().anyMatch(alias -> alias.equalsIgnoreCase(input.peek()));
+            // Generate the full input from the input.
+            // Don't use the original input as this operation clears all other input from the queue as well.
+            String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input));
+            // Try to find an alias that complies with the start of the input sequence
+            success = this.getAliases().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(DiscordController.getCommandPrefix() + alias.toLowerCase()));
+
+            // If so, cut the first part of the input off
+            if (success) {
+                for (int i = 0; i < this.getAliases().iterator().next().split("\\s+").length; i++) {
+                    input.poll();
+                }
+            }
         } else {
             success = input.peek().equalsIgnoreCase(DiscordController.getCommandPrefix() + query);
-        }
 
-        // If so, cut the first part of the input off
-        if (success) {
-            input.poll();
+            // If so, cut the first part of the input off
+            if (success) {
+                input.poll();
+            }
         }
 
         return success;

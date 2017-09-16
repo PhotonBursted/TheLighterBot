@@ -40,7 +40,7 @@ public class CommandParser extends ListenerAdapter {
      *
      * @param cmds The commands to register
      */
-    public static void addCommand(Command... cmds) {
+    public static void addCommand(Command cmds) {
         Collections.addAll(commands, cmds);
     }
 
@@ -68,12 +68,16 @@ public class CommandParser extends ListenerAdapter {
 
         // Try to find if a command was referenced, and if there was any, find which
         Command targetCmd = commands.stream()
-                .filter(cmd -> cmd.getAliases().stream().anyMatch(alias -> cmd.messageIsCommand(input)))
+                .filter(cmd -> cmd.messageIsCommand(input))
+                .sorted((cmd1, cmd2) -> {
+                    Double nParts1 = cmd1.getAliases().stream().mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
+                    Double nParts2 = cmd2.getAliases().stream().mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
+                    return nParts2.compareTo(nParts1);
+                })
                 .findFirst().orElse(null);
 
-        // If a command was referenced, delete the message and execute the command
+        // If a command was referenced, save the event and execute the command
         if (targetCmd != null) {
-            ev.getMessage().delete().reason("The message was part of a command.").queue();
             lastEvent = ev;
 
             targetCmd.prepareWithInput(input).executeCmd();
