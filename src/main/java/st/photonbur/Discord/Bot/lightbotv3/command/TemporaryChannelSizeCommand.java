@@ -18,28 +18,37 @@ import java.util.Set;
 public class TemporaryChannelSizeCommand extends Command {
     @Override
     public void execute() throws RateLimitedException {
+        // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
         TextChannel tc = ChannelController.getLinkedChannels().get(vc);
 
+        // If the voice channel wasn't found the user wasn't in one to start with
         if (vc != null) {
+            // The target should not be the default channel
             if (vc != ev.getGuild().getAfkChannel()) {
+                // If the target voice channel is permanent, the user requires MANAGE_CHANNEL permissions
                 if (!ChannelController.getPermChannels().containsKey(vc) ||
                         (ChannelController.getPermChannels().containsKey(vc) && ev.getMember().hasPermission(Permission.MANAGE_CHANNEL))) {
+                    // If all of this is the case, get the limit to be applied
                     String limit = input.poll();
                     if (limit.equals("remove")) {
                         limit = "0";
                     }
 
+                    // If the input is an integer and within the limits, update the channel
                     if (Utils.isInteger(limit) && Integer.parseInt(limit) >= 0 && Integer.parseInt(limit) <= 99) {
                         int intLimit = Integer.parseInt(limit);
 
+                        // Get the user limit and set the new value
                         vc.getManagerUpdatable().getUserLimitField()
                                 .setValue(intLimit)
                                 .update()
                                 .reason("A command was issued from a temporary channel")
                                 .queue();
 
+                        // If a channel is linked, update its permissions
                         if (tc != null) {
+                            // Send feedback to the logs and issuer
                             Logger.logAndDelete(String.format("Changed user limit of channel \"%s\" to %s.",
                                     vc.getName(), intLimit));
                             DiscordController.sendMessage(ev, String.format("**%s** changed the user limit %sto **%s**.",
@@ -47,7 +56,26 @@ public class TemporaryChannelSizeCommand extends Command {
                                     tc.equals(ev.getChannel()) ? ("of **" + vc.getName() + "** ") : "",
                                     intLimit));
 
+                            // If the limit is 0, this means the limit was removed
                             if (intLimit == 0) {
+                                // Remove all permissions that were blocking other users from seeing the channel
+                                Utils.removePermissionsFrom(
+                                        Utils.getPO(tc, tc.getGuild().getPublicRole()),
+                                        "The channel had its limit removed by a command from a temporary channel",
+                                        Permission.MESSAGE_READ);
+                                Utils.removePermissionsFrom(
+                                        Utils.getPO(tc, tc.getGuild().getSelfMember()),
+                                        "The channel had its limit removed by a command from a temporary channel",
+                                        Permission.MESSAGE_READ);
+
+                                for (Member m : vc.getMembers()) {
+                                    Utils.removePermissionsFrom(
+                                            Utils.getPO(tc, m),
+                                            "The channel had its limit removed by a command from a temporary channel",
+                                            Permission.MESSAGE_READ);
+                                }
+                            } else {
+                                // Revoke access for non-members of the voice channel should the channel be limited
                                 Utils.getPO(tc, ev.getGuild().getPublicRole())
                                         .getManagerUpdatable()
                                         .deny(Permission.MESSAGE_READ)
@@ -68,22 +96,6 @@ public class TemporaryChannelSizeCommand extends Command {
                                             .update()
                                             .reason("The channel was limited requiring the members to have read permissions")
                                             .queue();
-                                }
-                            } else {
-                                Utils.removePermissionsFrom(
-                                        Utils.getPO(tc, tc.getGuild().getPublicRole()),
-                                        "The channel had its limit removed by a command from a temporary channel",
-                                        Permission.MESSAGE_READ);
-                                Utils.removePermissionsFrom(
-                                        Utils.getPO(tc, tc.getGuild().getSelfMember()),
-                                        "The channel had its limit removed by a command from a temporary channel",
-                                        Permission.MESSAGE_READ);
-
-                                for (Member m : vc.getMembers()) {
-                                    Utils.removePermissionsFrom(
-                                            Utils.getPO(tc, m),
-                                            "The channel had its limit removed by a command from a temporary channel",
-                                            Permission.MESSAGE_READ);
                                 }
                             }
                         }
