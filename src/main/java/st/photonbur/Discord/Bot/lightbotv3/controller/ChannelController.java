@@ -81,7 +81,7 @@ public class ChannelController extends ListenerAdapter {
     }
 
     public static TextChannel createTempTextChannel(GuildMessageReceivedEvent ev, String name, Category parent) throws RateLimitedException {
-        ChannelAction tcAction = ev.getGuild().getController().createTextChannel(name)
+        ChannelAction tcAction = ev.getGuild().getController().createTextChannel(Utils.ircify("tdc-" + name))
                 .addPermissionOverride(ev.getGuild().getPublicRole(),
                         Permission.getRaw(Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_HISTORY),
                         0
@@ -116,7 +116,7 @@ public class ChannelController extends ListenerAdapter {
 
     // Create a temporary voice channel and notify the user of it.
     public static VoiceChannel createTempVoiceChannel(GuildMessageReceivedEvent ev, String name, Category parent) throws RateLimitedException {
-        ChannelAction vcAction = ev.getGuild().getController().createVoiceChannel(name)
+        ChannelAction vcAction = ev.getGuild().getController().createVoiceChannel("[T] " + name)
                 .addPermissionOverride(ev.getGuild().getPublicRole(),
                         Permission.getRaw(Permission.MESSAGE_READ, Permission.VOICE_CONNECT),
                         0);

@@ -17,13 +17,11 @@ public class TemporaryChannelCommand extends Command {
     @Override
     void execute() throws RateLimitedException {
         // Gather the name of the channel from the remaining input
-        ArrayList<String> channelNameParts = new ArrayList<>();
-        input.drainTo(channelNameParts);
-        String channelName = String.join(" ", channelNameParts.toArray(new String[channelNameParts.size()]));
+        String channelName = Utils.drainQueueToString(input);
 
         // Check if the channel name is available still
-        if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() > 0 &&
-                ev.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + channelName), true).size() > 0) {
+        if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0 &&
+                ev.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + channelName), true).size() == 0) {
             Category parent;
             HashMap<Guild, Category> categories = ChannelController.getCategories();
 
@@ -57,7 +55,7 @@ public class TemporaryChannelCommand extends Command {
 
             // Send feedback to the user
             DiscordController.sendMessage(ev, ev.getMember().getAsMention() + " succesfully added temporary channel **" + channelName + "**.\n" +
-                    "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds."
+                    "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds.", 120
             );
         } else {
             // If no channel is available, send feedback to the user
