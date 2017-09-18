@@ -4,8 +4,8 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
-import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
+import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.Set;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * Used as a template for commands.
  * These commands can be activated by specific inputs out of messages supplied by Discord.
  */
-abstract class Command {
+public abstract class Command {
     /**
      * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
      */
@@ -26,6 +26,12 @@ abstract class Command {
      * This input will be condensed out of a message and supplied by a {@link CommandParser CommandParser} if it is targeted at this command.
      */
     LinkedBlockingQueue<String> input;
+
+    Launcher l;
+
+    Command(Launcher l) {
+        this.l = l;
+    }
 
     /**
      * Checks whether a member is actually allowed execution of this command.
@@ -105,7 +111,7 @@ abstract class Command {
      */
     void handleError(String msg) {
         // Send a message indicating the error
-        DiscordController.sendMessage(CommandParser.getLastEvent(), msg, 10);
+        l.getDiscordController().sendMessage(CommandParser.getLastEvent(), msg, 10);
         // Delete both messages after 10 seconds
         CommandParser.getLastEvent().getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
     }
@@ -147,7 +153,7 @@ abstract class Command {
             // Don't use the original input as this operation clears all other input from the queue as well.
             String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input));
             // Try to find an alias that complies with the start of the input sequence
-            success = this.getAliases().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(DiscordController.getCommandPrefix() + alias.toLowerCase()));
+            success = this.getAliases().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
 
             // If so, cut the first part of the input off
             if (success) {
@@ -156,7 +162,7 @@ abstract class Command {
                 }
             }
         } else {
-            success = input.peek().equalsIgnoreCase(DiscordController.getCommandPrefix() + query);
+            success = input.peek().equalsIgnoreCase(l.getDiscordController().getCommandPrefix() + query);
 
             // If so, cut the first part of the input off
             if (success) {

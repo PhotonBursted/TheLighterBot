@@ -5,9 +5,9 @@ import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
-import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
+import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
@@ -16,20 +16,24 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class TemporaryChannelSizeCommand extends Command {
+    public TemporaryChannelSizeCommand(Launcher l) {
+        super(l);
+    }
+
     @Override
     public void execute() throws RateLimitedException {
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
-        TextChannel tc = ChannelController.getLinkedChannels().get(vc);
+        TextChannel tc = l.getChannelController().getLinkedChannels().get(vc);
 
         // If the voice channel wasn't found the user wasn't in one to start with
         if (vc != null) {
             // The target should not be the default channel
             if (vc != ev.getGuild().getAfkChannel()) {
                 // If the target voice channel is permanent, the user requires MANAGE_CHANNEL permissions
-                if (!ChannelController.getPermChannels().containsKey(vc) ||
-                        (ChannelController.getPermChannels().containsKey(vc) && ev.getMember().hasPermission(Permission.MANAGE_CHANNEL))) {
-                    // If all of this is the case, get the limit to be applied
+                if (!l.getChannelController().getPermChannels().containsKey(vc) ||
+                        (l.getChannelController().getPermChannels().containsKey(vc) && ev.getMember().hasPermission(Permission.MANAGE_CHANNEL))) {
+                    // If all of this is the case, getInstance the limit to be applied
                     String limit = input.poll();
                     if (limit.equals("remove")) {
                         limit = "0";
@@ -51,10 +55,12 @@ public class TemporaryChannelSizeCommand extends Command {
                             // Send feedback to the logs and issuer
                             Logger.logAndDelete(String.format("Changed user limit of channel \"%s\" to %s.",
                                     vc.getName(), intLimit));
-                            DiscordController.sendMessage(ev, String.format("**%s** changed the user limit %sto **%s**.",
-                                    ev.getAuthor().getName(),
-                                    tc.equals(ev.getChannel()) ? ("of **" + vc.getName() + "** ") : "",
-                                    intLimit));
+                            l.getDiscordController().sendMessage(ev,
+                                    String.format("**%s** changed the user limit %sto **%s**.",
+                                            ev.getAuthor().getName(),
+                                            tc.equals(ev.getChannel()) ? ("of **" + vc.getName() + "** ") : "",
+                                            intLimit),
+                                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
 
                             // If the limit is 0, this means the limit was removed
                             if (intLimit == 0) {

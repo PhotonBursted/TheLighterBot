@@ -1,9 +1,11 @@
 package st.photonbur.Discord.Bot.lightbotv3.main;
 
 import net.dv8tion.jda.core.JDA;
+import st.photonbur.Discord.Bot.lightbotv3.command.BlacklistCommand;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.command.TemporaryChannelCommand;
 import st.photonbur.Discord.Bot.lightbotv3.command.TemporaryChannelSizeCommand;
+import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 
@@ -18,9 +20,6 @@ import java.util.Properties;
 public class Launcher {
     private Properties props = new Properties();
 
-    private ChannelController channelController;
-    private DiscordController discordController;
-
     public static void main(String[] args) {
         new Launcher().run();
     }
@@ -34,8 +33,8 @@ public class Launcher {
             inputCfg = new FileInputStream("config.properties");
 
             props.load(inputCfg);
-            channelController = new ChannelController(this);
-            discordController = new DiscordController(this, props.getProperty("token"), props.getProperty("prefix"));
+            ChannelController.getInstance(this);
+            DiscordController.getInstance(this, props.getProperty("token"), props.getProperty("prefix"));
         } catch (IOException ex) {
             ex.printStackTrace();
         } finally {
@@ -46,8 +45,7 @@ public class Launcher {
             }
         }
 
-        CommandParser.addCommand(new TemporaryChannelCommand());
-        CommandParser.addCommand(new TemporaryChannelSizeCommand());
+        getCommandParser().addCommand(new BlacklistCommand(this), new TemporaryChannelCommand(this), new TemporaryChannelSizeCommand(this));
     }
 
     /**
@@ -59,10 +57,22 @@ public class Launcher {
     }
 
     public JDA getBot() {
-        return discordController.getBot();
+        return getDiscordController().getBot();
+    }
+
+    public BlacklistController getBlacklistController() {
+        return BlacklistController.getInstance();
     }
 
     public ChannelController getChannelController() {
-        return channelController;
+        return ChannelController.getInstance();
+    }
+
+    public CommandParser getCommandParser() {
+        return CommandParser.getInstance();
+    }
+
+    public DiscordController getDiscordController() {
+        return DiscordController.getInstance();
     }
 }

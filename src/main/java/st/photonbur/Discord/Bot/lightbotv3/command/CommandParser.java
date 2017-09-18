@@ -22,9 +22,18 @@ public class CommandParser extends ListenerAdapter {
     /**
      * The commands currently registered
      */
-    private static final Set<Command> commands;
+    private final Set<Command> commands;
+    private static CommandParser instance;
 
-    static  {
+    public static CommandParser getInstance() {
+        if (instance == null) {
+            instance = new CommandParser();
+        }
+
+        return instance;
+    }
+
+    private CommandParser() {
         commands = new HashSet<>();
     }
 
@@ -40,7 +49,7 @@ public class CommandParser extends ListenerAdapter {
      *
      * @param cmds The commands to register
      */
-    public static void addCommand(Command cmds) {
+    public void addCommand(Command... cmds) {
         Collections.addAll(commands, cmds);
     }
 
@@ -49,7 +58,7 @@ public class CommandParser extends ListenerAdapter {
      *
      * @param cmds The commands to remove from the registry
      */
-    public static void removeCommand(Command... cmds) {
+    public void removeCommand(Command... cmds) {
         commands.removeAll(Arrays.asList(cmds));
     }
 

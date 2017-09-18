@@ -41,6 +41,9 @@ public class DiscordController {
      */
     private JDA bot;
 
+    public static final long AUTOMATIC_REMOVAL_INTERVAL = 60L;
+    private static DiscordController instance;
+
     /**
      * Constructs a new interface with Discord
      *
@@ -48,13 +51,25 @@ public class DiscordController {
      * @param token         The token the bot uses to connect with Discord
      * @param commandPrefix The prefix to look for when receiving messages and in identifying whether something was a command or not
      */
-    public DiscordController(Launcher l, String token, String commandPrefix) {
+    private DiscordController(Launcher l, String token, String commandPrefix) {
         this.token = token;
         DiscordController.commandPrefix = commandPrefix;
         this.l = l;
 
         // Start up and log in
         start();
+    }
+
+    public static synchronized DiscordController getInstance() {
+        return getInstance(null, null, null);
+    }
+
+    public static synchronized DiscordController getInstance(Launcher l, String token, String commandPrefix) {
+        if (instance == null && !(l == null || token == null || commandPrefix == null)) {
+            instance = new DiscordController(l, token, commandPrefix);
+        }
+
+        return instance;
     }
 
     /**
@@ -67,7 +82,7 @@ public class DiscordController {
     /**
      * @return The prefix to look for when receiving messages and in identifying whether something was a command or not
      */
-    public static String getCommandPrefix() {
+    public String getCommandPrefix() {
         return commandPrefix;
     }
 
@@ -79,7 +94,7 @@ public class DiscordController {
      *
      * @see EmbedBuilder
      */
-    public static void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype) {
+    public void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype) {
         e.getMessage().getChannel().sendMessage(embedPrototype
                 .setColor(color)
                 .setFooter("Result of " + e.getMessage().getRawContent(), null)
@@ -95,7 +110,7 @@ public class DiscordController {
      *
      * @see MessageContent
      */
-    public static void sendMessage(GuildMessageReceivedEvent e, MessageContent msg) {
+    public void sendMessage(GuildMessageReceivedEvent e, MessageContent msg) {
         sendMessage(e, msg, 0);
     }
 
@@ -107,7 +122,7 @@ public class DiscordController {
      *
      * @see MessageContent
      */
-    public static void sendMessage(GuildMessageReceivedEvent e, MessageContent msg, long secondsBeforeDeletion) {
+    public void sendMessage(GuildMessageReceivedEvent e, MessageContent msg, long secondsBeforeDeletion) {
         sendMessage(e, msg.getMessage(), secondsBeforeDeletion);
     }
 
@@ -116,7 +131,7 @@ public class DiscordController {
      * @param e   The event to respond to
      * @param s   The string to display within the message
      */
-    public static Message sendMessage(GuildMessageReceivedEvent e, String s) {
+    public Message sendMessage(GuildMessageReceivedEvent e, String s) {
         return sendMessage(e, s, 0);
     }
 
@@ -126,7 +141,7 @@ public class DiscordController {
      * @param s                     The string to display within the message
      * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
      */
-    public static Message sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion) {
+    public Message sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion) {
         Message msg = e.getMessage().getChannel().sendMessage(s).complete();
 
         if (secondsBeforeDeletion > 0) {
@@ -148,7 +163,7 @@ public class DiscordController {
         try {
             bot = new JDABuilder(AccountType.BOT)
                     .setToken(token)
-                    .addEventListener(new CommandParser(), l.getChannelController())
+                    .addEventListener(l.getCommandParser(), l.getChannelController())
                     .buildBlocking();
 
         } catch (LoginException | InterruptedException | RateLimitedException ex) {

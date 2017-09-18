@@ -6,14 +6,21 @@ import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
-import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TemporaryChannelCommand extends Command {
+    public TemporaryChannelCommand(Launcher l) {
+        super(l);
+    }
+
     @Override
     void execute() throws RateLimitedException {
         // Gather the name of the channel from the remaining input
@@ -23,7 +30,7 @@ public class TemporaryChannelCommand extends Command {
         if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0 &&
                 ev.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + channelName), true).size() == 0) {
             Category parent;
-            HashMap<Guild, Category> categories = ChannelController.getCategories();
+            HashMap<Guild, Category> categories = l.getChannelController().getCategories();
 
             Logger.logAndDelete("Creating new temporary channel set\n" +
                     " - Name: " + channelName);
@@ -42,20 +49,23 @@ public class TemporaryChannelCommand extends Command {
 
             // No parent was found so a new category will be created
             if (parent == null) {
-                parent = ChannelController.createTempCategory(ev.getGuild(), channelName);
+                parent = l.getChannelController().createTempCategory(ev.getGuild(), channelName);
             }
 
             // Create the temporary channels
-            VoiceChannel vc = ChannelController.createTempVoiceChannel(ev, channelName, parent);
-            TextChannel tc = ChannelController.createTempTextChannel(ev, channelName, parent);
+            VoiceChannel vc = l.getChannelController().createTempVoiceChannel(ev, channelName, parent);
+            TextChannel tc = l.getChannelController().createTempTextChannel(ev, channelName, parent);
 
             // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
-            ChannelController.getLinkedChannels().put(vc, tc);
-            ChannelController.setNewChannelTimeout(vc);
+            l.getChannelController().getLinkedChannels().put(vc, tc);
+            l.getChannelController().setNewChannelTimeout(vc);
 
             // Send feedback to the user
-            DiscordController.sendMessage(ev, ev.getMember().getAsMention() + " succesfully added temporary channel **" + channelName + "**.\n" +
-                    "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds.", 120
+            l.getDiscordController().sendMessage(ev,
+                    String.format("%s succesfully added temporary channel **%s**.\n" +
+                            "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds.",
+                            ev.getMember().getAsMention(), channelName),
+                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL
             );
         } else {
             // If no channel is available, send feedback to the user
