@@ -1,10 +1,7 @@
 package st.photonbur.Discord.Bot.lightbotv3.main;
 
 import net.dv8tion.jda.core.JDA;
-import st.photonbur.Discord.Bot.lightbotv3.command.BlacklistCommand;
-import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
-import st.photonbur.Discord.Bot.lightbotv3.command.TemporaryChannelCommand;
-import st.photonbur.Discord.Bot.lightbotv3.command.TemporaryChannelSizeCommand;
+import st.photonbur.Discord.Bot.lightbotv3.command.*;
 import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
@@ -45,7 +42,12 @@ public class Launcher {
             }
         }
 
-        getCommandParser().addCommand(new BlacklistCommand(this), new TemporaryChannelCommand(this), new TemporaryChannelSizeCommand(this));
+        getCommandParser().addCommand(
+                new BlacklistCommand(this),
+                new TemporaryChannelCommand(this),
+                new TemporaryChannelSizeCommand(this),
+                new WhitelistCommand(this)
+        );
     }
 
     /**
