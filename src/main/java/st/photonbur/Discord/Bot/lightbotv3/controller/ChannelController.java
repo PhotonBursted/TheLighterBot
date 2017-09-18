@@ -3,6 +3,8 @@ package st.photonbur.Discord.Bot.lightbotv3.controller;
 import com.sun.istack.internal.Nullable;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
+import net.dv8tion.jda.core.events.channel.voice.VoiceChannelDeleteEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
@@ -14,10 +16,7 @@ import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -413,6 +412,56 @@ public class ChannelController extends ListenerAdapter {
         respondToLeave(ev.getChannelLeft(), ev.getMember());
 
         informUserAbout(EventType.LEAVE, ev.getMember(), ev.getChannelLeft());
+    }
+
+    /**
+     * Fired when a voice channel is deleted.
+     *
+     * @param ev The event thrown after a deletion has happened
+     */
+    @Override
+    public void onVoiceChannelDelete(VoiceChannelDeleteEvent ev) {
+        VoiceChannel vc = ev.getChannel();
+
+        if (permChannels.containsKey(vc)) {
+            Logger.log(String.format("Removing \"%s\" from list of permanent channels", vc.getName()));
+            Logger.log(String.format("\nRemoving \"#%s\" from list of permanent channels\n", permChannels.get(vc).getName()));
+            permChannels.remove(vc);
+        }
+
+        if (linkedChannels.containsKey(vc)) {
+            Logger.log(String.format("\nRemoving \"%s\" from list of linked channels\n", vc.getName()));
+            Logger.log(String.format("\nRemoving \"#%s\" from list of linked channels\n", linkedChannels.get(vc).getName()));
+            linkedChannels.remove(vc);
+        }
+    }
+
+    /**
+     * Fired when a text channel is deleted.
+     *
+     * @param ev The event thrown after a deletion has happened
+     */
+    @Override
+    public void onTextChannelDelete(TextChannelDeleteEvent ev) {
+        TextChannel tc = ev.getChannel();
+        VoiceChannel vc = permChannels.entrySet().stream()
+                .filter(entry -> Objects.equals(entry.getKey(), tc))
+                .map(Map.Entry::getKey)
+                .findFirst().orElse(null);
+
+        if (vc != null) {
+            if (permChannels.containsValue(tc)) {
+                Logger.log("\nRemoving \"" + vc.getName() + "\" from list of permanent channels\n");
+                Logger.log("\nRemoving \"#" + tc.getName() + "\" from list of permanent channels\n");
+                permChannels.remove(vc);
+            }
+
+            if (linkedChannels.containsValue(tc)) {
+                Logger.log("\nRemoving \"" + vc.getName() + "\" from list of linked channels\n");
+                Logger.log("\nRemoving \"#" + tc.getName() + "\" from list of linked channels\n");
+                linkedChannels.remove(vc);
+            }
+        }
     }
 
     /**
