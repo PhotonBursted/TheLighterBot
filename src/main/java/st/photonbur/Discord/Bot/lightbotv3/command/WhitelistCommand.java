@@ -111,7 +111,7 @@ public class WhitelistCommand extends Command {
 
     @Override
     String getDescription() {
-        return null;
+        return "Removes a role or user from the blacklist, reenabling them to interact with the bot.";
     }
 
     @Override
@@ -121,6 +121,10 @@ public class WhitelistCommand extends Command {
 
     @Override
     String getUsage() {
-        return null;
+        return "{}whitelist <searchTerm>.\n" +
+                "  <searchTerm> can be any of:\n" +
+                "   - <search> - searches for a role/user ID\n" +
+                "   - user:<search> - searches for a user with the name of <search>\n" +
+                "   - role:<search> - searches for a role with the name of <search>";
     }
 }

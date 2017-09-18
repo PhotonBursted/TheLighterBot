@@ -11,10 +11,7 @@ import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TemporaryChannelCommand extends Command {
     public TemporaryChannelCommand(Launcher l) {
@@ -81,12 +78,12 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     Set<String> getAliases() {
-        return new HashSet<>(Collections.singletonList("tempchan"));
+        return new HashSet<>(Arrays.asList("tc", "tempchan"));
     }
 
     @Override
     String getDescription() {
-        return null;
+        return "Creates a new set of temporary channels which delete upon inactivity.";
     }
 
     @Override
@@ -96,6 +93,7 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     String getUsage() {
-        return null;
+        return "{}tempchan <name>.\n" +
+                "  <name> specifies the name for the to be generated collection of channels.";
     }
 }

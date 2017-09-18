@@ -111,7 +111,7 @@ public class BlacklistCommand extends Command {
 
     @Override
     String getDescription() {
-        return null;
+        return "Blacklists a role or user blocking them from any interaction with the bot.";
     }
 
     @Override
@@ -121,6 +121,10 @@ public class BlacklistCommand extends Command {
 
     @Override
     String getUsage() {
-        return null;
+        return "{}blacklist <searchTerm>.\n" +
+                "  <searchTerm> can be any of:\n" +
+                "   - <search> - searches for a role/user ID\n" +
+                "   - user:<search> - searches for a user with the name of <search>\n" +
+                "   - role:<search> - searches for a role with the name of <search>";
     }
 }

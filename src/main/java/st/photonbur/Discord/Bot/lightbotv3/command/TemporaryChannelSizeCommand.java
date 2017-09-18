@@ -121,12 +121,12 @@ public class TemporaryChannelSizeCommand extends Command {
 
     @Override
     public Set<String> getAliases() {
-        return new HashSet<>(Arrays.asList("tempchan -s", "tempchan -size"));
+        return new HashSet<>(Arrays.asList("tc -s", "tc -size", "tempchan -s", "tempchan -size"));
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return "Adjusts the user limit of a channel without needing special permissions.";
     }
 
     @Override
@@ -136,6 +136,9 @@ public class TemporaryChannelSizeCommand extends Command {
 
     @Override
     public String getUsage() {
-        return null;
+        return "{}tempchan -size <channelSize>.\n" +
+                "  <channelSize> specifies the new size of the voice channel." +
+                "  - <channelSize> has to have an integer value between 0 and 99." +
+                "    A value of 0 will remove the limit, as does the keyword \"remove\"";
     }
 }
