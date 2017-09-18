@@ -1,7 +1,10 @@
 package st.photonbur.Discord.Bot.lightbotv3.main;
 
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.utils.SimpleLog;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 
 import java.io.*;
@@ -13,7 +16,7 @@ import java.util.Date;
 /**
  * Custom Logger implementation for use throughout the project
  */
-public class Logger {
+public class Logger extends ListenerAdapter {
     /**
      * Retains the ID of the last message deleted by the logger.
      * It is used to verify if a message marked for deletion should really be deleted or not.
@@ -33,11 +36,23 @@ public class Logger {
     /**
      * Stream handling output to both the console and log file.
      */
-    private static PrintStream out;
+    public static PrintStream out;
+
+    private static Logger instance;
 
     static {
         setupLogger();
     }
+
+    static synchronized Logger getInstance() {
+        if (instance == null) {
+            instance = new Logger();
+        }
+
+        return instance;
+    }
+
+    private Logger() { }
 
     /**
      * Logs something towards both the log file and console.
@@ -125,6 +140,11 @@ public class Logger {
         }
     }
 
+    @Override
+    public void onException(ExceptionEvent ev) {
+        ev.getCause().printStackTrace(Logger.out);
+    }
+
     /**
      * Sets up whatever is needed for the logger to work. This includes file name and file streams for example.
      */
@@ -148,6 +168,23 @@ public class Logger {
             // Notify that the logger has started outputting info
             Logger.log("Started routing to file and System.out...\n" +
                     " - File: " + logFile.getPath());
+
+            SimpleLog.LEVEL = SimpleLog.Level.OFF;
+            // Configure SimpleLog in such a way that it will send its messages through this logger
+            SimpleLog.addListener(new SimpleLog.LogListener() {
+                @Override
+                public void onError(SimpleLog log, Throwable err) {
+                    log("");
+                    err.printStackTrace(out);
+                }
+
+                @Override
+                public void onLog(SimpleLog log, SimpleLog.Level logLevel, Object message) {
+                    if (logLevel.getPriority() > 2) {
+                        log(String.format("[%s] [%s]: %s", log.name, logLevel.getTag().toUpperCase(), message), -2);
+                    }
+                }
+            });
         } catch (Exception ex) {
             ex.printStackTrace();
         }

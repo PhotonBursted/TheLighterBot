@@ -163,7 +163,7 @@ public class DiscordController {
         try {
             bot = new JDABuilder(AccountType.BOT)
                     .setToken(token)
-                    .addEventListener(l.getCommandParser(), l.getChannelController())
+                    .addEventListener(l.getCommandParser(), l.getChannelController(), l.getLogger())
                     .buildBlocking();
 
         } catch (LoginException | InterruptedException | RateLimitedException ex) {

@@ -17,6 +17,30 @@ import java.util.Properties;
 public class Launcher {
     private Properties props = new Properties();
 
+    public JDA getBot() {
+        return getDiscordController().getBot();
+    }
+
+    public BlacklistController getBlacklistController() {
+        return BlacklistController.getInstance();
+    }
+
+    public ChannelController getChannelController() {
+        return ChannelController.getInstance();
+    }
+
+    public CommandParser getCommandParser() {
+        return CommandParser.getInstance();
+    }
+
+    public DiscordController getDiscordController() {
+        return DiscordController.getInstance();
+    }
+
+    public Logger getLogger() {
+        return Logger.getInstance();
+    }
+
     public static void main(String[] args) {
         new Launcher().run();
     }
@@ -28,8 +52,8 @@ public class Launcher {
         FileInputStream inputCfg = null;
         try {
             inputCfg = new FileInputStream("config.properties");
-
             props.load(inputCfg);
+
             ChannelController.getInstance(this);
             DiscordController.getInstance(this, props.getProperty("token"), props.getProperty("prefix"));
         } catch (IOException ex) {
@@ -56,25 +80,5 @@ public class Launcher {
      */
     private void shutdown() {
         Logger.shutdown();
-    }
-
-    public JDA getBot() {
-        return getDiscordController().getBot();
-    }
-
-    public BlacklistController getBlacklistController() {
-        return BlacklistController.getInstance();
-    }
-
-    public ChannelController getChannelController() {
-        return ChannelController.getInstance();
-    }
-
-    public CommandParser getCommandParser() {
-        return CommandParser.getInstance();
-    }
-
-    public DiscordController getDiscordController() {
-        return DiscordController.getInstance();
     }
 }
