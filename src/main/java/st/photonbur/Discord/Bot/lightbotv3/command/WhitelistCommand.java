@@ -36,10 +36,8 @@ public class WhitelistCommand extends Command {
 
                     // If the target isn't whitelisted yet, do so, and provide feedback
                     if (l.getBlacklistController().isBlacklisted(ev.getGuild(), userToWhitelist)) {
-                        l.getBlacklistController().whitelist(ev.getGuild(), userToWhitelist);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully whitelisted **%s** (ID %s)",
-                                        Utils.userAsString(userToWhitelist), userToWhitelist.getId()),
+                        String response = l.getBlacklistController().whitelist(ev.getGuild(), userToWhitelist);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError(String.format("**%s** is already whitelisted for this server!",
@@ -60,10 +58,8 @@ public class WhitelistCommand extends Command {
 
                     // If the target isn't whitelisted yet, do so, and provide feedback
                     if (l.getBlacklistController().isBlacklisted(ev.getGuild(), roleToWhitelist)) {
-                        l.getBlacklistController().whitelist(ev.getGuild(), roleToWhitelist);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully whitelisted the **%s** role (ID %s)",
-                                    roleToWhitelist.getName(), roleToWhitelist.getId()),
+                        String response = l.getBlacklistController().whitelist(ev.getGuild(), roleToWhitelist);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError("The role you tried to whitelist is already whitelisted for this server!");
@@ -79,18 +75,14 @@ public class WhitelistCommand extends Command {
                     if (ev.getGuild().getRoles().stream().anyMatch(role -> role.getId().equals(target))) {
                         Role targetRole = l.getBot().getRoleById(target);
 
-                        l.getBlacklistController().whitelist(ev.getGuild(), targetRole);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully whitelisted the **%s** role (ID %s)",
-                                        targetRole.getName(), target),
+                        String response = l.getBlacklistController().whitelist(ev.getGuild(), targetRole);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
                         User targetUser = l.getBot().getUserById(target);
 
-                        l.getBlacklistController().whitelist(ev.getGuild(), targetUser);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully whitelisted **%s** (ID %s)",
-                                        Utils.userAsString(targetUser), target),
+                        String response = l.getBlacklistController().whitelist(ev.getGuild(), targetUser);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError("The ID you supplied was neither a role or user in this server!");
@@ -106,7 +98,7 @@ public class WhitelistCommand extends Command {
 
     @Override
     String[] getAliases() {
-        return new String[] {"wl", "whitelist"};
+        return new String[] {"whitelist", "wl"};
     }
 
     @Override

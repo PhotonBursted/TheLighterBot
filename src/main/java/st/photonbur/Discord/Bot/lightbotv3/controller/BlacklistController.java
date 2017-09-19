@@ -26,14 +26,6 @@ public class BlacklistController {
         blacklist = new HashMap<>();
     }
 
-    public static synchronized BlacklistController getInstance() {
-        if (instance == null) {
-            instance = new BlacklistController();
-        }
-
-        return instance;
-    }
-
     public <T extends ISnowflake & IMentionable> String blacklist(Guild g, T entity) {
         blacklist.putIfAbsent(g, new HashSet<>());
         blacklist.get(g).add(entity);
@@ -55,6 +47,14 @@ public class BlacklistController {
 
     Set<? extends ISnowflake> getForGuild(Guild g) {
         return blacklist.get(g);
+    }
+
+    public static synchronized BlacklistController getInstance() {
+        if (instance == null) {
+            instance = new BlacklistController();
+        }
+
+        return instance;
     }
 
     public boolean isBlacklisted(Guild g, String targetID) {

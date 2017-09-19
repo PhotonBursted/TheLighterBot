@@ -36,10 +36,8 @@ public class BlacklistCommand extends Command {
 
                     // If the target isn't blacklisted yet, do so, and provide feedback
                     if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), userToBlacklist)) {
-                        l.getBlacklistController().blacklist(ev.getGuild(), userToBlacklist);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully blacklisted **%s** (ID %s)",
-                                        Utils.userAsString(userToBlacklist), userToBlacklist.getId()),
+                        String response = l.getBlacklistController().blacklist(ev.getGuild(), userToBlacklist);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError(String.format("**%s** is already blacklisted for this server!",
@@ -60,10 +58,8 @@ public class BlacklistCommand extends Command {
 
                     // If the target isn't blacklisted yet, do so, and provide feedback
                     if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), roleToBlacklist)) {
-                        l.getBlacklistController().blacklist(ev.getGuild(), roleToBlacklist);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully blacklisted the **%s** role (ID %s)",
-                                    roleToBlacklist.getName(), roleToBlacklist.getId()),
+                        String response = l.getBlacklistController().blacklist(ev.getGuild(), roleToBlacklist);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError("The role you tried to blacklist is already blacklisted for this server!");
@@ -79,18 +75,14 @@ public class BlacklistCommand extends Command {
                     if (ev.getGuild().getRoles().stream().anyMatch(role -> role.getId().equals(target))) {
                         Role targetRole = l.getBot().getRoleById(target);
 
-                        l.getBlacklistController().blacklist(ev.getGuild(), targetRole);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully blacklisted the **%s** role (ID %s)",
-                                        targetRole.getName(), target),
+                        String response = l.getBlacklistController().blacklist(ev.getGuild(), targetRole);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
                         User targetUser = l.getBot().getUserById(target);
 
-                        l.getBlacklistController().blacklist(ev.getGuild(), targetUser);
-                        l.getDiscordController().sendMessage(ev,
-                                String.format("Successfully blacklisted **%s** (ID %s)",
-                                        Utils.userAsString(targetUser), target),
+                        String response = l.getBlacklistController().blacklist(ev.getGuild(), targetUser);
+                        l.getDiscordController().sendMessage(ev, response,
                                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                     } else {
                         handleError("The ID you supplied was neither a role or user in this server!");
@@ -106,7 +98,7 @@ public class BlacklistCommand extends Command {
 
     @Override
     String[] getAliases() {
-        return new String[] {"bl", "blacklist"};
+        return new String[] {"blacklist", "bl"};
     }
 
     @Override
