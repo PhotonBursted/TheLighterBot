@@ -120,8 +120,8 @@ public class TemporaryChannelSizeCommand extends Command {
     }
 
     @Override
-    public Set<String> getAliases() {
-        return new HashSet<>(Arrays.asList("tc -s", "tc -size", "tempchan -s", "tempchan -size"));
+    public String[] getAliases() {
+        return new String[] {"tc -s", "tc -size", "tempchan -s", "tempchan -size"};
     }
 
     @Override
@@ -130,15 +130,15 @@ public class TemporaryChannelSizeCommand extends Command {
     }
 
     @Override
-    public Set<Permission> getPermissionsRequired() {
-        return new HashSet<>();
+    public Permission[] getPermissionsRequired() {
+        return new Permission[] {};
     }
 
     @Override
     public String getUsage() {
         return "{}tempchan -size <channelSize>.\n" +
-                "  <channelSize> specifies the new size of the voice channel." +
-                "  - <channelSize> has to have an integer value between 0 and 99." +
+                "  <channelSize> specifies the new size of the voice channel.\n" +
+                "  - <channelSize> has to have an integer value between 0 and 99.\n" +
                 "    A value of 0 will remove the limit, as does the keyword \"remove\"";
     }
 }

@@ -8,9 +8,10 @@ import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-import java.util.Set;
+import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Used as a template for commands.
@@ -27,7 +28,7 @@ public abstract class Command {
      */
     LinkedBlockingQueue<String> input;
 
-    Launcher l;
+    final Launcher l;
 
     Command(Launcher l) {
         this.l = l;
@@ -39,7 +40,7 @@ public abstract class Command {
      * @param m The member to check the permissions of
      * @return Whether or not the member is allowed to execute this command
      */
-    public boolean canBeExecutedBy(Member m) {
+    private boolean canBeExecutedBy(Member m) {
         return m.hasPermission(getPermissionsRequired());
     }
 
@@ -56,7 +57,15 @@ public abstract class Command {
         try {
             this.ev = CommandParser.getLastEvent();
 
-            execute();
+            if (!l.getBlacklistController().isBlacklisted(ev.getMember())) {
+                if (canBeExecutedBy(ev.getMember())) {
+                    execute();
+                } else {
+                    handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
+                }
+            } else {
+                handleError(MessageContent.BLACKLISTED);
+            }
         } catch (RateLimitedException ex) {
             ex.printStackTrace();
         }
@@ -66,7 +75,7 @@ public abstract class Command {
      * Method to be implemented with aliases of the command.
      * @return The aliases this command possesses
      */
-    abstract Set<String> getAliases();
+    abstract String[] getAliases();
 
     /**
      * Method to be implemented with the description describing this command.
@@ -78,7 +87,7 @@ public abstract class Command {
      * Method to be implemented with the permissions a user should possess in order to be allowed to execute this command.
      * @return The list of permissions needed to perform the command
      */
-    abstract Set<Permission> getPermissionsRequired();
+    abstract Permission[] getPermissionsRequired();
 
     /**
      * Method to be implemented with an explanation of the usage of this command.
@@ -153,11 +162,11 @@ public abstract class Command {
             // Don't use the original input as this operation clears all other input from the queue as well.
             String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input));
             // Try to find an alias that complies with the start of the input sequence
-            success = this.getAliases().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
+            success = Arrays.stream(this.getAliases()).anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
 
             // If so, cut the first part of the input off
             if (success) {
-                for (int i = 0; i < this.getAliases().iterator().next().split("\\s+").length; i++) {
+                for (int i = 0; i < this.getAliases()[0].split("\\s+").length; i++) {
                     input.poll();
                 }
             }

@@ -65,7 +65,7 @@ public class BlacklistController {
                 blacklistees.stream().anyMatch(item -> item.getId().equals(targetID));
     }
 
-    boolean isBlacklisted(Member m) {
+    public boolean isBlacklisted(Member m) {
         Set<ISnowflake> blacklistees = blacklist.get(m.getGuild());
 
         return blacklistees != null &&

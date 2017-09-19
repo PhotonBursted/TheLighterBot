@@ -105,8 +105,8 @@ public class BlacklistCommand extends Command {
     }
 
     @Override
-    Set<String> getAliases() {
-        return new HashSet<>(Arrays.asList("bl", "blacklist"));
+    String[] getAliases() {
+        return new String[] {"bl", "blacklist"};
     }
 
     @Override
@@ -115,8 +115,8 @@ public class BlacklistCommand extends Command {
     }
 
     @Override
-    Set<Permission> getPermissionsRequired() {
-        return new HashSet<>(Collections.singletonList(Permission.MANAGE_CHANNEL));
+    Permission[] getPermissionsRequired() {
+        return new Permission[] {Permission.MANAGE_CHANNEL};
     }
 
     @Override

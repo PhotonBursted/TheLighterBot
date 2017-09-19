@@ -79,8 +79,8 @@ public class CommandParser extends ListenerAdapter {
         Command targetCmd = commands.stream()
                 .filter(cmd -> cmd.messageIsCommand(input))
                 .sorted((cmd1, cmd2) -> {
-                    Double nParts1 = cmd1.getAliases().stream().mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
-                    Double nParts2 = cmd2.getAliases().stream().mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
+                    Double nParts1 = Arrays.stream(cmd1.getAliases()).mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
+                    Double nParts2 = Arrays.stream(cmd2.getAliases()).mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
                     return nParts2.compareTo(nParts1);
                 })
                 .findFirst().orElse(null);
@@ -91,5 +91,9 @@ public class CommandParser extends ListenerAdapter {
 
             targetCmd.prepareWithInput(input).executeCmd();
         }
+    }
+
+    public Set<Command> getCommands() {
+        return commands;
     }
 }

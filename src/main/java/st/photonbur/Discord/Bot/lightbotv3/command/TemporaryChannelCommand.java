@@ -77,8 +77,8 @@ public class TemporaryChannelCommand extends Command {
     }
 
     @Override
-    Set<String> getAliases() {
-        return new HashSet<>(Arrays.asList("tc", "tempchan"));
+    String[] getAliases() {
+        return new String[] {"tc", "tempchan"};
     }
 
     @Override
@@ -87,8 +87,8 @@ public class TemporaryChannelCommand extends Command {
     }
 
     @Override
-    Set<Permission> getPermissionsRequired() {
-        return new HashSet<>();
+    Permission[] getPermissionsRequired() {
+        return new Permission[] {};
     }
 
     @Override
