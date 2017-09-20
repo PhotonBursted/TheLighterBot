@@ -15,12 +15,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TemporaryChannelSizeCommand extends Command {
-    public TemporaryChannelSizeCommand(Launcher l) {
-        super(l);
-    }
-
-    @Override
+public class TemporaryChannelSizeCommand extends Command {@Override
     public void execute() throws RateLimitedException {
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();

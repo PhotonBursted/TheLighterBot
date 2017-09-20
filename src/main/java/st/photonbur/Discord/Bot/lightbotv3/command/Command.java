@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
  * Used as a template for commands.
  * These commands can be activated by specific inputs out of messages supplied by Discord.
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class Command {
     /**
      * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
@@ -30,8 +31,8 @@ public abstract class Command {
 
     final Launcher l;
 
-    Command(Launcher l) {
-        this.l = l;
+    Command() {
+        this.l = Launcher.getInstance();
     }
 
     /**

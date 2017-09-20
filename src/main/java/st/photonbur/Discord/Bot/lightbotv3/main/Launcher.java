@@ -78,11 +78,11 @@ public class Launcher {
         }
 
         getCommandParser().addCommand(
-                new BlacklistCommand(this),
-                new HelpCommand(this),
-                new TemporaryChannelCommand(this),
-                new TemporaryChannelSizeCommand(this),
-                new WhitelistCommand(this)
+                new BlacklistCommand(),
+                new HelpCommand(),
+                new TemporaryChannelCommand(),
+                new TemporaryChannelSizeCommand(),
+                new WhitelistCommand()
         );
     }
 

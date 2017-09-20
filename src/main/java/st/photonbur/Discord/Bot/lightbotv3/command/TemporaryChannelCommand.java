@@ -14,10 +14,6 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import java.util.*;
 
 public class TemporaryChannelCommand extends Command {
-    public TemporaryChannelCommand(Launcher l) {
-        super(l);
-    }
-
     @Override
     void execute() throws RateLimitedException {
         // Gather the name of the channel from the remaining input

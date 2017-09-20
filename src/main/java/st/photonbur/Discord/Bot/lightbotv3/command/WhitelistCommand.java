@@ -17,10 +17,6 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorImpl;
 import java.util.*;
 
 public class WhitelistCommand extends Command implements Selector {
-    public WhitelistCommand(Launcher l) {
-        super(l);
-    }
-
     @Override
     void execute() throws RateLimitedException {
         // Check if the input actually had enough arguments

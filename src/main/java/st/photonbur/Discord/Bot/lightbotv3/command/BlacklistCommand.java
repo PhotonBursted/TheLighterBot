@@ -19,10 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class BlacklistCommand extends Command implements Selector {
-    public BlacklistCommand(Launcher l) {
-        super(l);
-    }
-
     @Override
     void execute() throws RateLimitedException {
         // Check if the input actually had enough arguments
