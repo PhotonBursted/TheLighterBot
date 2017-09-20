@@ -33,12 +33,6 @@ public class PaginatorImpl extends Menu {
     }
 
     @Override
-    protected void destroy() {
-        l.getBot().removeEventListener(this);
-        message.delete().queue();
-    }
-
-    @Override
     protected void doActionWith(Control source) {
         movePage(source);
     }

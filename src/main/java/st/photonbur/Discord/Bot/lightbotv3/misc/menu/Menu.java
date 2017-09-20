@@ -29,7 +29,7 @@ public abstract class Menu extends ListenerAdapter {
     /**
      * The central Launcher instance.
      */
-    protected final Launcher l;
+    private final Launcher l;
 
     /**
      * The timeout of this message.
@@ -48,6 +48,7 @@ public abstract class Menu extends ListenerAdapter {
         this.messageTimeout = new ScheduledThreadPoolExecutor(1);
         this.l = Launcher.getInstance();
 
+        l.getBot().addEventListener(this);
         addControls();
     }
 
@@ -77,7 +78,16 @@ public abstract class Menu extends ListenerAdapter {
     /**
      * Destroys the menu and the message along with it.
      */
-    protected abstract void destroy();
+    protected void destroy() {
+        // Stop any message timeouts to prevent deletion after the message has been deleted
+        timeoutFuture.cancel(true);
+        messageTimeout.shutdown();
+
+        // Prevent any clicks from activating the menu again
+        l.getBot().removeEventListener(this);
+        // Delete the message
+        message.delete().queue();
+    }
 
     /**
      * Performs an action using the control which was interacted with.
@@ -106,12 +116,7 @@ public abstract class Menu extends ListenerAdapter {
 
         // If any control was detected, do things appropriately
         if (selectedOption != null) {
-            if (selectedOption.equals(Control.STOP)) {
-                // Stop any message timeouts to prevent deletion after the message has been deleted
-                timeoutFuture.cancel(true);
-                messageTimeout.shutdown();
-
-                // Call the menu specific destroying method
+            if (selectedOption == Control.STOP) {
                 destroy();
             } else {
                 // Call the menu specific response method
@@ -127,13 +132,15 @@ public abstract class Menu extends ListenerAdapter {
      * This means that, when this method is called, the timeout period is refreshed preventing the message from being deleted.
      */
     private void refreshTimeout() {
-        if (timeoutFuture != null && !timeoutFuture.isDone()) {
-            timeoutFuture.cancel(true);
-        }
+        if (!messageTimeout.isShutdown()) {
+            if (timeoutFuture != null && !timeoutFuture.isDone()) {
+                timeoutFuture.cancel(true);
+            }
 
-        timeoutFuture = messageTimeout.schedule(() -> {
-            destroy();
-            messageTimeout.shutdown();
-        }, DiscordController.AUTOMATIC_REMOVAL_INTERVAL, TimeUnit.SECONDS);
+            timeoutFuture = messageTimeout.schedule(() -> {
+                destroy();
+                messageTimeout.shutdown();
+            }, DiscordController.AUTOMATIC_REMOVAL_INTERVAL, TimeUnit.SECONDS);
+        }
     }
 }

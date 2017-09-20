@@ -21,7 +21,10 @@ public enum Control {
     PREV("\u25C0", -1, true),
     STOP("\u23F9", 0, true),
     ACCEPT("\u2611", 0, true),
-    NEXT("\u25B6", 1, true);
+    NEXT("\u25B6", 1, true),
+
+    NOT_SELECTED("\uD83C\uDF12", 0, true),
+    SELECTED("\uD83C\uDF15", 0, true);
 
     private final String unicode;
     private final int offset;
