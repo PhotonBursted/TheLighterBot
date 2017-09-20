@@ -69,9 +69,15 @@ public class PaginatorImpl extends ListenerAdapter {
         message.delete().queue();
     }
 
-    private void movePage(Controls controls) {
-        if (controls == null) return;
-        currPage += controls.getOffset();
+    private void movePage(Controls control) {
+        if (control == null) return;
+
+        if (control.isRelative()) {
+            currPage += control.getOffset();
+        } else {
+            currPage = control.getOffset();
+        }
+
         currPage = Math.floorMod(currPage, content.size());
 
         setPage(currPage);
@@ -86,11 +92,14 @@ public class PaginatorImpl extends ListenerAdapter {
         Controls selectedOption = Arrays.stream(Controls.values())
                 .filter(c -> c.getUnicode().equals(ev.getReaction().getEmote().getName()))
                 .findFirst().orElse(null);
-        if (selectedOption != null && selectedOption.equals(Controls.STOP)) {
-            destroy();
-        } else {
-            movePage(selectedOption);
-            refreshTimeout();
+
+        if (selectedOption != null) {
+            if (selectedOption.equals(Controls.STOP)) {
+                destroy();
+            } else {
+                movePage(selectedOption);
+                refreshTimeout();
+            }
         }
     }
 
