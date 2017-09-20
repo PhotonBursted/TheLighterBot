@@ -1,17 +1,24 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.ISnowflake;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
+import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
+import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
+import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.Selector;
+import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorImpl;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
 
-public class BlacklistCommand extends Command {
+public class BlacklistCommand extends Command implements Selector {
     public BlacklistCommand(Launcher l) {
         super(l);
     }
@@ -30,18 +37,15 @@ public class BlacklistCommand extends Command {
 
                 // See if there were any search results
                 if (candidates.size() > 0) {
-                    // Store the first result to be found
-                    //TODO redo search system to allow better control of results (paginator?)
-                    User userToBlacklist = candidates.get(0).getUser();
-
-                    // If the target isn't blacklisted yet, do so, and provide feedback
-                    if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), userToBlacklist)) {
-                        String response = l.getBlacklistController().blacklist(ev.getGuild(), userToBlacklist);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+                    // If there was only one user found, perform the blacklist.
+                    // Otherwise, generate a selector and let the user decide what the target was
+                    if (candidates.size() == 1) {
+                        performBlacklist(candidates.get(0).getUser());
                     } else {
-                        handleError(String.format("**%s** is already blacklisted for this server!",
-                                Utils.userAsString(userToBlacklist)));
+                        LinkedHashMap<String, User> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), c.getUser()));
+
+                        new SelectorImpl<>(this, l.getDiscordController().sendMessage(ev, "Building selector..."), candidateMap);
                     }
                 } else {
                     handleError(String.format("No user was found in this server having name **%s!**",
@@ -53,16 +57,15 @@ public class BlacklistCommand extends Command {
 
                 // See if there were any search results
                 if (candidates.size() > 0) {
-                    // Store the first result to be found
-                    Role roleToBlacklist = candidates.get(0);
-
-                    // If the target isn't blacklisted yet, do so, and provide feedback
-                    if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), roleToBlacklist)) {
-                        String response = l.getBlacklistController().blacklist(ev.getGuild(), roleToBlacklist);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+                    // If there was only one user found, perform the blacklist.
+                    // Otherwise, generate a selector and let the user decide what the target was
+                    if (candidates.size() == 1) {
+                        performBlacklist(candidates.get(0));
                     } else {
-                        handleError("The role you tried to blacklist is already blacklisted for this server!");
+                        LinkedHashMap<String, Role> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(c.getName(), c));
+
+                        new SelectorImpl<>(this, l.getDiscordController().sendMessage(ev, "Building selector..."), candidateMap);
                     }
                 } else {
                     handleError(String.format("The role you searched for (with name %s) couldn't be found!",
@@ -118,5 +121,51 @@ public class BlacklistCommand extends Command {
                 "       - <search> - searches for a role/user ID\n" +
                 "       - user:<search> - searches for a user with the name of <search>\n" +
                 "       - role:<search> - searches for a role with the name of <search>";
+    }
+
+    @Override
+    public void onSelection(SelectionEvent<?> selEv) {
+        if (selEv.selectionWasMade()) {
+            Object target = selEv.getSelectedOption();
+
+            // If the target isn't blacklisted yet, do so, and provide feedback
+            if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), ((ISnowflake) target).getId())) {
+                if (target instanceof User) {
+                    performBlacklist(((User) target));
+                } else if (target instanceof Role) {
+                    performBlacklist(((Role) target));
+                }
+            } else {
+                if (target instanceof User) {
+                    handleError(String.format("User **%s** is already blacklisted for this server!",
+                            Utils.userAsString(((User) target))));
+                } else if (target instanceof Role) {
+                    handleError(String.format("Role **%s** is already blacklisted for this server!",
+                            ((Role) target).getName()));
+                } else {
+                    handleError("This entity is already blacklisted for this server!");
+                }
+            }
+        } else {
+            handleError("The blacklist action was cancelled.");
+        }
+    }
+
+    private void performBlacklist(User user) {
+        String response = l.getBlacklistController().blacklist(ev.getGuild(), user);
+
+        Logger.logAndDelete(response);
+        l.getDiscordController().sendMessage(ev,
+                String.format("Successfully blacklisted user **%s**!", Utils.userAsString(user)),
+                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+    }
+
+    private void performBlacklist(Role role) {
+        String response = l.getBlacklistController().blacklist(ev.getGuild(), role);
+
+        Logger.logAndDelete(response);
+        l.getDiscordController().sendMessage(ev,
+                String.format("Successfully blacklisted role **%s**!", role.getName()),
+                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
 }
