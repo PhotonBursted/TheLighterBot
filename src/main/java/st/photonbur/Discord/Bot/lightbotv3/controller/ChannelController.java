@@ -325,24 +325,69 @@ public class ChannelController extends ListenerAdapter {
     private void informUserAbout(EventType type, Member member, VoiceChannel... vcs) {
         switch (type) {
             case JOIN:
-                if (linkedChannels.containsKey(vcs[0])) {
+                if (isLinked(vcs[0])) {
                     linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** joined the voice channel").queue();
                 }
                 break;
             case LEAVE:
-                if (linkedChannels.containsKey(vcs[0])) {
+                if (isLinked(vcs[0])) {
                     linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** left the voice channel").queue();
                 }
                 break;
             case MOVE:
-                if (linkedChannels.containsKey(vcs[0])) {
+                if (isLinked(vcs[0])) {
                     linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
                 }
-                if (linkedChannels.containsKey(vcs[1])) {
+                if (isLinked(vcs[1])) {
                     linkedChannels.get(vcs[1]).sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
                 }
         }
     }
+
+    /**
+     * Checks whether a voice channel is marked as linked.
+     *
+     * @param vc The voice channel to check
+     * @return True if the channel is marked as linked by the bot
+     * @see #linkedChannels
+     */
+    public boolean isLinked(VoiceChannel vc) {
+        return linkedChannels.containsKey(vc);
+    }
+
+    /**
+     * Checks whether a voice channel is marked as permanent.
+     *
+     * @param tc The text channel to check
+     * @return True if the channel is marked as linked by the bot
+     * @see #linkedChannels
+     */
+    private boolean isLinked(TextChannel tc) {
+        return linkedChannels.containsValue(tc);
+    }
+
+    /**
+     * Checks whether a voice channel is marked as permanent.
+     *
+     * @param vc The voice channel to check
+     * @return True if the channel is marked as permanent by the bot
+     * @see #permChannels
+     */
+    public boolean isPermanent(VoiceChannel vc) {
+        return permChannels.containsKey(vc);
+    }
+
+    /**
+     * Checks whether a voice channel is marked as permanent.
+     *
+     * @param tc The voice channel to check
+     * @return True if the channel is marked as permanent by the bot
+     * @see #permChannels
+     */
+    private boolean isPermanent(TextChannel tc) {
+        return permChannels.containsValue(tc);
+    }
+
 
     /**
      * Logs an event to the logs.
@@ -357,19 +402,17 @@ public class ChannelController extends ListenerAdapter {
         if (type != null) {
             int amountOfMembers = vcs[0].getMembers().size();
 
-            message += "\n" +
-                    member.getEffectiveName() + " " + type.getVerb() + " channel \"" + vcs[0].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
-                    "There " + (amountOfMembers == 1 ? "is" : "are") + " now " + amountOfMembers + " member" + (amountOfMembers == 1 ? "" : "s") + " in the channel.\n";
+            message += member.getEffectiveName() + " " + type.getVerb() + " channel \"" + vcs[0].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
+                    "There " + (amountOfMembers == 1 ? "is" : "are") + " now " + amountOfMembers + " member" + (amountOfMembers == 1 ? "" : "s") + " in the channel.";
         } else {
             int[] amountOfMembers = new int[vcs.length];
             for (int i = 0; i < vcs.length; i++) {
                 amountOfMembers[i] = vcs[i].getMembers().size();
             }
 
-            message += "\n" +
-                    member.getEffectiveName() + " moved from \"" + vcs[0].getName() + "\" to \"" + vcs[1].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
+            message += member.getEffectiveName() + " moved from \"" + vcs[0].getName() + "\" to \"" + vcs[1].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
                     "There " + (amountOfMembers[0] == 1 ? "is" : "are") + " now " + amountOfMembers[0] + " member" + (amountOfMembers[0] == 1 ? "" : "s") + " in the left channel\n" +
-                    "  and " + amountOfMembers[1] + " member" + (amountOfMembers[1] == 1 ? "" : "s") + " in the joined channel.\n";
+                    "  and " + amountOfMembers[1] + " member" + (amountOfMembers[1] == 1 ? "" : "s") + " in the joined channel.";
         }
 
         Logger.log(message);
@@ -423,15 +466,15 @@ public class ChannelController extends ListenerAdapter {
     public void onVoiceChannelDelete(VoiceChannelDeleteEvent ev) {
         VoiceChannel vc = ev.getChannel();
 
-        if (permChannels.containsKey(vc)) {
+        if (isPermanent(vc)) {
             Logger.log(String.format("Removing \"%s\" from list of permanent channels", vc.getName()));
-            Logger.log(String.format("\nRemoving \"#%s\" from list of permanent channels\n", permChannels.get(vc).getName()));
+            Logger.log(String.format("Removing \"#%s\" from list of permanent channels", permChannels.get(vc).getName()));
             permChannels.remove(vc);
         }
 
-        if (linkedChannels.containsKey(vc)) {
-            Logger.log(String.format("\nRemoving \"%s\" from list of linked channels\n", vc.getName()));
-            Logger.log(String.format("\nRemoving \"#%s\" from list of linked channels\n", linkedChannels.get(vc).getName()));
+        if (isLinked(vc)) {
+            Logger.log(String.format("Removing \"%s\" from list of linked channels", vc.getName()));
+            Logger.log(String.format("Removing \"#%s\" from list of linked channels", linkedChannels.get(vc).getName()));
             linkedChannels.remove(vc);
         }
     }
@@ -450,15 +493,15 @@ public class ChannelController extends ListenerAdapter {
                 .findFirst().orElse(null);
 
         if (vc != null) {
-            if (permChannels.containsValue(tc)) {
-                Logger.log("\nRemoving \"" + vc.getName() + "\" from list of permanent channels\n");
-                Logger.log("\nRemoving \"#" + tc.getName() + "\" from list of permanent channels\n");
+            if (isPermanent(tc)) {
+                Logger.log("Removing \"" + vc.getName() + "\" from list of permanent channels");
+                Logger.log("Removing \"#" + tc.getName() + "\" from list of permanent channels");
                 permChannels.remove(vc);
             }
 
-            if (linkedChannels.containsValue(tc)) {
-                Logger.log("\nRemoving \"" + vc.getName() + "\" from list of linked channels\n");
-                Logger.log("\nRemoving \"#" + tc.getName() + "\" from list of linked channels\n");
+            if (isLinked(tc)) {
+                Logger.log("Removing \"" + vc.getName() + "\" from list of linked channels");
+                Logger.log("Removing \"#" + tc.getName() + "\" from list of linked channels");
                 linkedChannels.remove(vc);
             }
         }
@@ -479,7 +522,7 @@ public class ChannelController extends ListenerAdapter {
 
         // If this is a linked channel, the member should have reading permissions within the text channel
         // should the voice channel be limited.
-        if (linkedChannels.containsKey(vc)) {
+        if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
                 try {
                     Utils.getPO(linkedChannels.get(vc), m).getManagerUpdatable().grant(Permission.MESSAGE_READ).update().reason("The channel was joined and is limited, requiring members to see the linked text channel").queue();
@@ -513,13 +556,13 @@ public class ChannelController extends ListenerAdapter {
     private void respondToLeave(VoiceChannel vc, Member m) {
         // If a shutdown was still scheduled, cancel it.
         // If a user joined the channel, it should be kept alive.
-        if (vc.getMembers().size() == 0 && linkedChannels.containsKey(vc) && !permChannels.containsKey(vc)) {
+        if (vc.getMembers().size() == 0 && isLinked(vc) && !isPermanent(vc)) {
             deleteLinkedChannels(vc);
         }
 
         // If this is a linked channel, the member should not have reading permissions within the text channel
         // should the voice channel be limited.
-        if (linkedChannels.containsKey(vc)) {
+        if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
                 try {
                     Utils.removePermissionsFrom(Utils.getPO(linkedChannels.get(vc), m), "The channel was left and is limited, requiring non-members to not see the associated text channel", Permission.MESSAGE_READ);

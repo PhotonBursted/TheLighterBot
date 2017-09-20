@@ -26,8 +26,8 @@ public class TemporaryChannelSizeCommand extends Command {@Override
             // The target should not be the default channel
             if (vc != ev.getGuild().getAfkChannel()) {
                 // If the target voice channel is permanent, the user requires MANAGE_CHANNEL permissions
-                if (!l.getChannelController().getPermChannels().containsKey(vc) ||
-                        (l.getChannelController().getPermChannels().containsKey(vc) && ev.getMember().hasPermission(Permission.MANAGE_CHANNEL))) {
+                if (!l.getChannelController().isPermanent(vc) ||
+                        (l.getChannelController().isPermanent(vc) && ev.getMember().hasPermission(Permission.MANAGE_CHANNEL))) {
                     // If all of this is the case, getInstance the limit to be applied
                     String limit = input.poll();
                     if (limit.equals("remove")) {
