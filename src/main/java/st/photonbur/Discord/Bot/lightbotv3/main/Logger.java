@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.requests.RestAction;
 import net.dv8tion.jda.core.utils.SimpleLog;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 
@@ -36,7 +37,7 @@ public class Logger extends ListenerAdapter {
     /**
      * Stream handling output to both the console and log file.
      */
-    public static PrintStream out;
+    private static PrintStream out;
 
     private static Logger instance;
 
@@ -96,7 +97,11 @@ public class Logger extends ListenerAdapter {
             StackTraceElement ste = stes[i];
 
             // Check if the stack trace element is currently from within the Logger class or the last available
-            if (!ste.getClassName().contains(Logger.class.getName()) || i == stes.length - 1) {
+            if ((
+                    !ste.getClassName().contains(Logger.class.getName()) &&
+                    !ste.getClassName().contains(SimpleLog.class.getName()) &&
+                    !ste.getClassName().contains(RestAction.class.getName())
+            ) || i == stes.length - 1) {
                 // Determine the actual stack trace element target (compensated by the offset)
                 ste = stes[Arrays.asList(stes).indexOf(ste) - offset];
                 // Generate the string representation of the stack trace element
@@ -173,15 +178,12 @@ public class Logger extends ListenerAdapter {
             // Configure SimpleLog in such a way that it will send its messages through this logger
             SimpleLog.addListener(new SimpleLog.LogListener() {
                 @Override
-                public void onError(SimpleLog log, Throwable err) {
-                    log("");
-                    err.printStackTrace(out);
-                }
+                public void onError(SimpleLog log, Throwable err) {}
 
                 @Override
                 public void onLog(SimpleLog log, SimpleLog.Level logLevel, Object message) {
-                    if (logLevel.getPriority() > 2) {
-                        log(String.format("[%s] [%s]: %s", log.name, logLevel.getTag().toUpperCase(), message), -2);
+                    if (logLevel.getPriority() > 2 && !message.toString().contains("Encountered an exception")) {
+                        log(String.format("[%s] [%s]: %s", log.name, logLevel.getTag().toUpperCase(), message));
                     }
                 }
             });
