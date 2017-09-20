@@ -8,7 +8,7 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Menu;
 import java.util.LinkedList;
 
 public class PaginatorImpl extends Menu {
-    private static final String ITEM_SEPARATOR = "\\nNEWITM\\n";
+    private static final String ITEM_SEPARATOR = "\nNEWITM\n";
 
     private final LinkedList<String> content;
     private int currPage;
