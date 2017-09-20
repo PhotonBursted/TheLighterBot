@@ -35,7 +35,7 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
         });
 
         Logger.logAndDelete("Begged for help!");
-        new PaginatorImpl(this, commandTextList, ev.getMessage());
+        new PaginatorImpl(this, commandTextList, l.getDiscordController().sendMessage(ev, "Requesting help..."));
     }
 
     @Override
