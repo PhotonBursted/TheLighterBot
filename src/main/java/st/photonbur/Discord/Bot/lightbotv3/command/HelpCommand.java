@@ -41,10 +41,7 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
         });
 
         Logger.logAndDelete("Begged for help!");
-        l.getBot().addEventListener(new PaginatorImpl(this, commandTextList, ev.getMessage(),
-                Control.PREV,
-                Control.STOP,
-                Control.NEXT));
+        l.getBot().addEventListener(new PaginatorImpl(this, commandTextList, ev.getMessage()));
     }
 
     @Override
