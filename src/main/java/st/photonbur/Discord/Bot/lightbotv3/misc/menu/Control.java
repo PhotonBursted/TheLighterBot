@@ -1,6 +1,6 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.menu;
 
-public enum Controls {
+public enum Control {
     ONE("\u0031", 1, false),
     TWO("\u0032", 2, false),
     THREE("\u0033", 3, false),
@@ -21,7 +21,7 @@ public enum Controls {
     private final int offset;
     private final boolean isRelative;
 
-    Controls(String s, int offset, boolean isRelative) {
+    Control(String s, int offset, boolean isRelative) {
         this.unicode = s;
         this.offset = offset;
         this.isRelative = isRelative;
