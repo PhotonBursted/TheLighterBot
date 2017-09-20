@@ -15,7 +15,10 @@ import java.util.Properties;
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
 public class Launcher {
+    private static Launcher instance;
     private Properties props = new Properties();
+
+    private Launcher() { }
 
     public JDA getBot() {
         return getDiscordController().getBot();
@@ -35,6 +38,14 @@ public class Launcher {
 
     public DiscordController getDiscordController() {
         return DiscordController.getInstance();
+    }
+
+    public static synchronized Launcher getInstance() {
+        if (instance == null) {
+            instance = new Launcher();
+        }
+
+        return instance;
     }
 
     public Logger getLogger() {
@@ -68,6 +79,7 @@ public class Launcher {
 
         getCommandParser().addCommand(
                 new BlacklistCommand(this),
+                new HelpCommand(this),
                 new TemporaryChannelCommand(this),
                 new TemporaryChannelSizeCommand(this),
                 new WhitelistCommand(this)
