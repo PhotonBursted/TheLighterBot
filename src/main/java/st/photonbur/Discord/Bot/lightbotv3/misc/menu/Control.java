@@ -1,5 +1,8 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.menu;
 
+/**
+ * Specifies emotes to use in a menu.
+ */
 public enum Control {
     ONE("\u0031", 1, false),
     TWO("\u0032", 2, false),
@@ -11,6 +14,9 @@ public enum Control {
     EIGHT("\u0038", 8, false),
     NINE("\u0039", 9, false),
     TEN("\u0040", 10, false),
+
+    UP("\uD83D\uDD3C", -1, true),
+    DOWN("\uD83D\uDD3D", 1, true),
     
     PREV("\u25C0", -1, true),
     STOP("\u23F9", 0, true),

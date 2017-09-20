@@ -17,45 +17,63 @@ public class PaginatorImpl extends Menu {
 
     /**
      * Creates a new paginator targeting a {@link Message} and scrolling through the content.
-     * This content will automatically be shrunk to fit within a message without surpassing the character limit.
+     * The content will have to be supplied and displayed by the parent.
      *
-     * @param content The content to show in the paginator
+     * @param parent   The instance of the object requesting to show this menu
+     * @param content  The content to show in the paginator
+     * @param message  The message to hook the menu into
      */
-    public PaginatorImpl(Paginator<?> parent, LinkedList<String> content, Message message, Control... controls) {
-        super(message, controls);
+    public PaginatorImpl(Paginator<?> parent, LinkedList<String> content, Message message) {
+        super(message, Control.PREV, Control.STOP, Control.NEXT);
         this.content = parent.groupContent(content, ITEM_SEPARATOR);
         this.currPage = 0;
         this.parent = parent;
 
-        setPage(currPage);
+        renderPage(currPage);
     }
 
+    @Override
     protected void destroy() {
         l.getBot().removeEventListener(this);
         message.delete().queue();
     }
 
+    @Override
+    protected void doActionWith(Control source) {
+        movePage(source);
+    }
+
+    /**
+     * Moves to a page when a certain control was clicked.
+     *
+     * @param control The control clicked
+     */
     private void movePage(Control control) {
         if (control == null) return;
 
+        // If the control has its offset specified as being relative, add the offset. Otherwise, set it
         if (control.isRelative()) {
             currPage += control.getOffset();
         } else {
             currPage = control.getOffset();
         }
 
+        // Make sure the current page is within the range of the amount of pages
         currPage = Math.floorMod(currPage, content.size());
 
-        setPage(currPage);
+        renderPage(currPage);
     }
 
-    protected void doActionWith(Control source) {
-        movePage(source);
-    }
-
-    private void setPage(int page) {
+    /**
+     * Renders the content from a specific page
+     *
+     * @param page The page to render
+     */
+    private void renderPage(int page) {
+        // Get the content supplied by the parent caller
         Object content = parent.constructMessage(this.content.get(page).split(ITEM_SEPARATOR), page + 1, this.content.size());
 
+        // Try to edit the message if it is of the right type
         if (content instanceof String) {
             message.editMessage(((String) content)).queue();
         } else if (content instanceof Message) {
