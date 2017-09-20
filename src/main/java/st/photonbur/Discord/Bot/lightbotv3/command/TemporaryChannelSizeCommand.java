@@ -121,7 +121,7 @@ public class TemporaryChannelSizeCommand extends Command {
 
     @Override
     public String[] getAliases() {
-        return new String[] {"tc -s", "tc -size", "tempchan -s", "tempchan -size"};
+        return new String[] {"tempchan -s", "tempchan -size", "tc -s", "tc -size"};
     }
 
     @Override
@@ -137,8 +137,8 @@ public class TemporaryChannelSizeCommand extends Command {
     @Override
     public String getUsage() {
         return "{}tempchan -size <channelSize>.\n" +
-                "  <channelSize> specifies the new size of the voice channel.\n" +
-                "  - <channelSize> has to have an integer value between 0 and 99.\n" +
-                "    A value of 0 will remove the limit, as does the keyword \"remove\"";
+                "    <channelSize> specifies the new size of the voice channel.\n" +
+                "    - <channelSize> has to have an integer value between 0 and 99.\n" +
+                "        A value of 0 will remove the limit, as does the keyword \"remove\"";
     }
 }

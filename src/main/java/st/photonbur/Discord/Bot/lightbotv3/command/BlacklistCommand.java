@@ -19,7 +19,7 @@ public class BlacklistCommand extends Command {
     @Override
     void execute() throws RateLimitedException {
         // Check if the input actually had enough arguments
-        if (input.size() >= 2) {
+        if (input.size() >= 1) {
             // Get the input after the arguments as one string representation
             String target = Utils.drainQueueToString(input);
 
@@ -114,9 +114,9 @@ public class BlacklistCommand extends Command {
     @Override
     String getUsage() {
         return "{}blacklist <searchTerm>.\n" +
-                "  <searchTerm> can be any of:\n" +
-                "   - <search> - searches for a role/user ID\n" +
-                "   - user:<search> - searches for a user with the name of <search>\n" +
-                "   - role:<search> - searches for a role with the name of <search>";
+                "    <searchTerm> can be any of:\n" +
+                "       - <search> - searches for a role/user ID\n" +
+                "       - user:<search> - searches for a user with the name of <search>\n" +
+                "       - role:<search> - searches for a role with the name of <search>";
     }
 }

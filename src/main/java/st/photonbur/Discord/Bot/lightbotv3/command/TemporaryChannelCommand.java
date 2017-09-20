@@ -78,7 +78,7 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     String[] getAliases() {
-        return new String[] {"tc", "tempchan"};
+        return new String[] {"tempchan", "tc"};
     }
 
     @Override
@@ -94,6 +94,6 @@ public class TemporaryChannelCommand extends Command {
     @Override
     String getUsage() {
         return "{}tempchan <name>.\n" +
-                "  <name> specifies the name for the to be generated collection of channels.";
+                "    <name> specifies the name for the to be generated collection of channels.";
     }
 }
