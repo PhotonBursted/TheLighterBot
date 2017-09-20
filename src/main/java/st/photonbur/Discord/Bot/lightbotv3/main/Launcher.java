@@ -80,8 +80,12 @@ public class Launcher {
         getCommandParser().addCommand(
                 new BlacklistCommand(),
                 new HelpCommand(),
+                new LinkChannelCommand(),
+                new PermanentChannelCommand(),
                 new TemporaryChannelCommand(),
                 new TemporaryChannelSizeCommand(),
+                new UnlinkChannelCommand(),
+                new UnpermanentChannelCommand(),
                 new WhitelistCommand()
         );
     }
