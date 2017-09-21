@@ -175,6 +175,9 @@ public class FileController {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
+        } else {
+            //noinspection ResultOfMethodCallIgnored
+            dest.delete();
         }
     }
 }

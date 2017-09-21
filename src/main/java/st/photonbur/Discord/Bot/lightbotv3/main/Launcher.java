@@ -6,11 +6,11 @@ import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
-import sun.launcher.LauncherHelper;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Scanner;
 
 /**
  * General manager of all parts of the bot.
@@ -110,6 +110,19 @@ public class Launcher {
                 new UnpermanentChannelCommand(),
                 new WhitelistCommand()
         );
+
+        Scanner sc = new Scanner(System.in);
+        while (sc.hasNextLine()) {
+            String name = sc.nextLine();
+
+            if (name.equals("exit")) {
+                sc.close();
+                this.shutdown();
+                break;
+            } else if (name.equals("reload")) {
+                getFileController().readAllGuilds();
+            }
+        }
     }
 
     /**
@@ -117,6 +130,6 @@ public class Launcher {
      * This so that normal behaviour is forced for every element of it.
      */
     private void shutdown() {
-        Logger.shutdown();
+        getLogger().shutdown();
     }
 }

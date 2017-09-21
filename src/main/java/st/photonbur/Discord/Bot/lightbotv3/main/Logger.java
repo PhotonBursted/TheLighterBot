@@ -28,21 +28,17 @@ public class Logger extends ListenerAdapter {
     /**
      * The file to write the log to.
      */
-    private static File logFile = new File("logs/lb-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".log.txt");
+    private File logFile = new File("logs/lb-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".log.txt");
     /**
      * Stream handling output to the log file.
      */
-    private static FileOutputStream fos;
+    private FileOutputStream fos;
     /**
      * Stream handling output to both the console and log file.
      */
     public static PrintStream out;
 
     private static Logger instance;
-
-    static {
-        setupLogger();
-    }
 
     static synchronized Logger getInstance() {
         if (instance == null) {
@@ -52,7 +48,9 @@ public class Logger extends ListenerAdapter {
         return instance;
     }
 
-    private Logger() { }
+    private Logger() {
+        setupLogger();
+    }
 
     /**
      * Logs something towards both the log file and console.
@@ -151,7 +149,7 @@ public class Logger extends ListenerAdapter {
     /**
      * Sets up whatever is needed for the logger to work. This includes file name and file streams for example.
      */
-    private static void setupLogger() {
+    private void setupLogger() {
         try {
             // Create the file to write the log into
             if (!logFile.exists()) {
@@ -198,7 +196,7 @@ public class Logger extends ListenerAdapter {
     /**
      * Acts when the bot is shutting down to properly handle closing streams.
      */
-    static void shutdown() {
+    void shutdown() {
         try {
             if (fos != null) fos.close();
             if (out != null) out.close();
