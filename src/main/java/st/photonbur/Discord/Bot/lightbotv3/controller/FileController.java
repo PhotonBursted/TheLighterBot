@@ -114,7 +114,6 @@ public class FileController {
     }
 
     public void saveGuild(Guild g) {
-        Logger.log("Saving " + g.getName());
         File dest = new File("guilds/" + g.getId() + ".guild.json");
 
         WeakHashMap<VoiceChannel, TextChannel> linkedChannelPairs = l.getChannelController().getLinkedChannelsForGuild(g);

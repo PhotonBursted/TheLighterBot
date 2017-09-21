@@ -24,11 +24,14 @@ public class SetCategoryCommand extends Command implements Selector {
 
             if (search.startsWith("cat:")) {
                 List<Category> candidates = l.getBot().getCategoriesByName(String.join(":", Arrays.copyOfRange(search.split(":"), 1, search.split(":").length)), true);
-                if (candidates.size() > 0) {
+                if (candidates.size() > 1) {
                     LinkedHashMap<String, Category> candidateMap = new LinkedHashMap<>();
                     candidates.forEach(candidate -> candidateMap.put(candidate.getName() + "(ID " + candidate.getId() + ")", candidate));
 
                     new SelectorImpl<>(this, l.getDiscordController().sendMessage(ev, "Building selector..."), candidateMap);
+                    return;
+                } else if (candidates.size() == 1) {
+                    c = candidates.get(0);
                 } else {
                     c = null;
                 }
