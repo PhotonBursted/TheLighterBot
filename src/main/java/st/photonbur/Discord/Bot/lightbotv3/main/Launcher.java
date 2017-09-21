@@ -133,6 +133,7 @@ public class Launcher {
         Logger.log("Shutting down...");
 
         getLogger().shutdown();
+        getBot().shutdown();
 
         System.exit(0);
     }
