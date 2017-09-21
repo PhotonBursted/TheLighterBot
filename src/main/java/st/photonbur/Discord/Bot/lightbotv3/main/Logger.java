@@ -71,6 +71,10 @@ public class Logger extends ListenerAdapter {
      */
     @SuppressWarnings("SameParameterValue")
     private static void log(String s, int offset) {
+        if (out == null) {
+            Logger.getInstance();
+        }
+
         out.println(LocalDateTime.now().toString().replace("T", " ") + " - " + findCaller(offset) + "\n" + s + "\n");
     }
 

@@ -117,7 +117,7 @@ public class Launcher {
 
             if (name.equals("exit")) {
                 sc.close();
-                this.shutdown();
+                shutdown();
                 break;
             } else if (name.equals("reload")) {
                 getFileController().readAllGuilds();
@@ -130,6 +130,10 @@ public class Launcher {
      * This so that normal behaviour is forced for every element of it.
      */
     private void shutdown() {
+        Logger.log("Shutting down...");
+
         getLogger().shutdown();
+
+        System.exit(0);
     }
 }

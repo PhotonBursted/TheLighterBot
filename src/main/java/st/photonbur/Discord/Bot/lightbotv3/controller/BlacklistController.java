@@ -1,6 +1,9 @@
 package st.photonbur.Discord.Bot.lightbotv3.controller;
 
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
+import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.HashMap;
@@ -11,6 +14,8 @@ import java.util.Set;
  * Maintains the blacklist. The blacklist contains users and roles who are not allowed to interact with the bot.
  */
 public class BlacklistController {
+    private final Launcher l;
+
     /**
      * Enum holding the types of actions which can be applied to the blacklist database.
      */
@@ -23,6 +28,8 @@ public class BlacklistController {
      */
     private final HashMap<Guild, Set<ISnowflake>> blacklist;
 
+    private final static String REASON = "The server's blacklist changed and required a permission update";
+    
     /**
      * The only BlacklistController instance permitted to exist.
      * Part of the Singleton design pattern.
@@ -31,6 +38,7 @@ public class BlacklistController {
 
     private BlacklistController() {
         blacklist = new HashMap<>();
+        l = Launcher.getInstance();
     }
 
     /**
@@ -56,6 +64,8 @@ public class BlacklistController {
     public <T extends ISnowflake & IMentionable> String blacklist(Guild g, T entity) {
         blacklist.putIfAbsent(g, new HashSet<>());
         blacklist.get(g).add(entity);
+
+        updateChannelPermOverrides(Action.BLACKLIST, g, entity);
 
         return confirmAction(Action.BLACKLIST, g, entity);
     }
@@ -133,8 +143,67 @@ public class BlacklistController {
                                 item.getId().equals(m.getUser().getId()));
     }
 
-    public <T extends ISnowflake & IMentionable> boolean isBlacklisted(Guild g, T entity) {
-        return isBlacklisted(g, entity.getId());
+    private <T extends ISnowflake> void updateChannelPermOverrides(Action action, Guild guild, T entity) {
+        l.getChannelController().getLinkedChannels().entrySet().stream()
+                .filter(entry -> entry.getKey().getGuild().equals(guild))
+                .forEach(entry -> {
+                    try {
+                        if (action == Action.BLACKLIST) {
+                            PermissionOverride po = Utils.getPO(entry.getValue(), entity);
+                            if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
+                                po.getManagerUpdatable().deny(Permission.MESSAGE_READ).update().reason(REASON).queue();
+                            }
+
+                            po = Utils.getPO(entry.getKey(), entity);
+                            if (!po.getDenied().contains(Permission.VOICE_CONNECT) && !po.getDenied().contains(Permission.MESSAGE_READ)) {
+                                po.getManagerUpdatable().deny(Permission.VOICE_CONNECT, Permission.MESSAGE_READ).update().reason(REASON).queue();
+                            } else if (!po.getDenied().contains(Permission.VOICE_CONNECT)) {
+                                po.getManagerUpdatable().deny(Permission.VOICE_CONNECT).update().reason(REASON).queue();
+                            } else if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
+                                po.getManagerUpdatable().deny(Permission.MESSAGE_READ).update().reason(REASON).queue();
+                            }
+
+                            if (entry.getKey().getParent() != null) {
+                                po = Utils.getPO(entry.getKey().getParent(), entity);
+                                if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
+                                    po.getManagerUpdatable().deny(Permission.MESSAGE_READ).update().reason(REASON).queue();
+                                }
+                            }
+                        } else {
+                            PermissionOverride poT = null, poV = null, poC = null;
+
+                            if (entity instanceof Role) {
+                                poT = entry.getValue().getPermissionOverride((Role) entity);
+                                poV = entry.getKey().getPermissionOverride((Role) entity);
+                            } else if (entity instanceof User) {
+                                poT = entry.getValue().getPermissionOverride(guild.getMember((User) entity));
+                                poV = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+                            }
+
+                            if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
+                                Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
+                            }
+
+                            if (poV != null && (poV.getDenied().contains(Permission.VOICE_CONNECT) || poV.getDenied().contains(Permission.MESSAGE_READ))) {
+                                Utils.removePermissionsFrom(poV, REASON, Permission.VOICE_CONNECT, Permission.MESSAGE_READ);
+                            }
+
+                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(entry.getKey().getGuild())) {
+                                if (entity instanceof Role) {
+                                    poC = entry.getKey().getParent().getPermissionOverride((Role) entity);
+                                } else if (entity instanceof User) {
+                                    poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity));
+                                }
+
+                                if (poC != null && poC.getDenied().contains(Permission.MESSAGE_READ)) {
+                                    Utils.removePermissionsFrom(poC, REASON, Permission.MESSAGE_READ);
+                                }
+                            }
+                        }
+                    } catch (RateLimitedException ex) {
+                        ex.printStackTrace();
+                    }
+                });
     }
 
     /**
@@ -147,6 +216,8 @@ public class BlacklistController {
      */
     public <T extends ISnowflake & IMentionable> String whitelist(Guild g, T entity) {
         blacklist.get(g).remove(entity);
+
+        updateChannelPermOverrides(Action.WHITELIST, g, entity);
 
         return confirmAction(Action.WHITELIST, g, entity);
     }
