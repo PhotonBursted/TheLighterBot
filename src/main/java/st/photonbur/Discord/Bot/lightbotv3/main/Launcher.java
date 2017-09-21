@@ -103,6 +103,7 @@ public class Launcher {
                 new InfoCommand(),
                 new LinkChannelCommand(),
                 new PermanentChannelCommand(),
+                new SetCategoryCommand(),
                 new TemporaryChannelCommand(),
                 new TemporaryChannelSizeCommand(),
                 new UnlinkChannelCommand(),
