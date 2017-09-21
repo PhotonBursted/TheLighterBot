@@ -273,40 +273,6 @@ public class ChannelController extends ListenerAdapter {
     }
 
     /**
-     * Fetches all channel pairs which should be linked together.
-     * This both validates the channel pairs stored in the channel file and gathers pairs of still-active temporary channels.
-     * @return The pairing of all linked channels
-     */
-    private Map<VoiceChannel, TextChannel> fetchChannelPairs() {
-        Logger.log("Fetching channel pairs...");
-
-        Map<VoiceChannel, TextChannel> ids = new HashMap<>();
-
-        // Validate stored channels
-        permChannels.forEach((vc, tc) -> {
-            if (vc != null && tc != null) {
-                if (tc.canTalk() && vc.getGuild().equals(tc.getGuild())) {
-                    ids.put(vc, tc);
-                }
-            }
-        });
-
-        // Find already active temporary channels
-        l.getBot().getVoiceChannels().stream().filter(vc -> vc.getName().startsWith("[T] ")).forEach(vc -> {
-            List<TextChannel> tcl = vc.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + vc.getName().substring(4)), true);
-
-            if (tcl.size() != 0) {
-                ids.put(vc, tcl.get(0));
-            }
-        });
-
-        // Log the found pairs
-        Logger.log("Found channel pairs: " + ids.size() + "\n" + Utils.getFetchedChannelMapAsString(ids));
-
-        return ids;
-    }
-
-    /**
      * @return The categories saved for every guild.
      */
     public HashMap<Guild, Category> getCategories() {
@@ -320,6 +286,14 @@ public class ChannelController extends ListenerAdapter {
         return linkedChannels;
     }
 
+    @SuppressWarnings("unchecked")
+    WeakHashMap<VoiceChannel, TextChannel> getLinkedChannelsForGuild(Guild g) {
+        Object map = linkedChannels.entrySet().stream()
+                .filter(entry -> entry.getKey().getGuild().equals(g))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return (WeakHashMap<VoiceChannel, TextChannel>) map;
+    }
+
     /**
      * @return The pairs of channels which should be kept, even when left empty.
      */
@@ -328,11 +302,11 @@ public class ChannelController extends ListenerAdapter {
     }
 
     @SuppressWarnings("unchecked")
-    HashMap<VoiceChannel, TextChannel> getPermChannelsForGuild(Guild g) {
+    WeakHashMap<VoiceChannel, TextChannel> getPermChannelsForGuild(Guild g) {
         Object map = permChannels.entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(g))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return (HashMap<VoiceChannel, TextChannel>) map;
+        return (WeakHashMap<VoiceChannel, TextChannel>) map;
     }
 
     /**

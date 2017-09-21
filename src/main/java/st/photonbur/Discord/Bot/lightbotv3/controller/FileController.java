@@ -11,8 +11,7 @@ import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
+import java.util.WeakHashMap;
 
 public class FileController {
     private static FileController instance;
@@ -73,8 +72,19 @@ public class FileController {
                 }
             }
 
-            if (guildObject.has("permChannels")) {
-                guildObject.get("permChannels").getAsJsonObject().entrySet().forEach((pair) -> {
+            if (guildObject.has("linked")) {
+                guildObject.get("linked").getAsJsonObject().entrySet().forEach((pair) -> {
+                    VoiceChannel vc = l.getBot().getVoiceChannelById(pair.getKey());
+                    TextChannel tc = l.getBot().getTextChannelById(pair.getValue().getAsString());
+
+                    if (vc != null && tc != null) {
+                        l.getChannelController().getLinkedChannels().put(vc, tc);
+                    }
+                });
+            }
+
+            if (guildObject.has("perm")) {
+                guildObject.get("perm").getAsJsonObject().entrySet().forEach((pair) -> {
                     VoiceChannel vc = l.getBot().getVoiceChannelById(pair.getKey());
                     TextChannel tc = l.getBot().getTextChannelById(pair.getValue().getAsString());
 
@@ -90,22 +100,41 @@ public class FileController {
 
     public void saveGuild(Guild g) {
         File dest = new File("/guilds/" + g.getId() + ".guild.json");
-        HashMap<VoiceChannel, TextChannel> permChannelPairs = l.getChannelController().getPermChannelsForGuild(g);
+        WeakHashMap<VoiceChannel, TextChannel> linkedChannelPairs = l.getChannelController().getLinkedChannelsForGuild(g);
+        WeakHashMap<VoiceChannel, TextChannel> permChannelPairs = l.getChannelController().getPermChannelsForGuild(g);
 
-        if (permChannelPairs.size() > 0 && l.getChannelController().getCategories().containsKey(g)) {
+        if (linkedChannelPairs.size() > 0 || permChannelPairs.size() > 0 || l.getChannelController().getCategories().containsKey(g)) {
             try (JsonWriter jw = new JsonWriter(new BufferedWriter(new FileWriter(dest)))) {
                 jw.setIndent("  ");
                 jw.beginObject();
 
-                jw.name("defCategory").value(l.getChannelController().getCategories().get(g).getId());
-                jw.name("permChannels").beginObject();
-                permChannelPairs.forEach((vc, tc) -> {
-                    try {
-                        jw.name(vc.getId()).value(tc.getId());
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }
-                });
+                if (l.getChannelController().getCategories().containsKey(g)) {
+                    jw.name("defCategory").value(l.getChannelController().getCategories().get(g).getId());
+                }
+
+                if (linkedChannelPairs.size() > 0) {
+                    jw.name("linked").beginObject();
+                    linkedChannelPairs.forEach((vc, tc) -> {
+                        try {
+                            jw.name(vc.getId()).value(tc.getId());
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    jw.endObject();
+                }
+
+                if (permChannelPairs.size() > 0) {
+                    jw.name("perm").beginObject();
+                    permChannelPairs.forEach((vc, tc) -> {
+                        try {
+                            jw.name(vc.getId()).value(tc.getId());
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    jw.endObject();
+                }
                 jw.endObject();
 
                 jw.endObject();
