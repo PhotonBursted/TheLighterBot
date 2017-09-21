@@ -5,6 +5,8 @@ import st.photonbur.Discord.Bot.lightbotv3.command.*;
 import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
+import sun.launcher.LauncherHelper;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -52,6 +54,10 @@ public class Launcher {
         return DiscordController.getInstance();
     }
 
+    public FileController getFileController() {
+        return FileController.getInstance();
+    }
+
     public static synchronized Launcher getInstance() {
         if (instance == null) {
             instance = new Launcher();
@@ -65,7 +71,7 @@ public class Launcher {
     }
 
     public static void main(String[] args) {
-        new Launcher().run();
+        Launcher.getInstance().run();
     }
 
     /**
@@ -79,6 +85,8 @@ public class Launcher {
 
             ChannelController.getInstance(this);
             DiscordController.getInstance(this, props.getProperty("token"), props.getProperty("prefix"));
+
+            getFileController().readAllGuilds();
         } catch (IOException ex) {
             ex.printStackTrace();
         } finally {

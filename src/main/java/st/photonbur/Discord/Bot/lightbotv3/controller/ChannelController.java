@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChannelController extends ListenerAdapter {
@@ -324,6 +325,14 @@ public class ChannelController extends ListenerAdapter {
      */
     public HashMap<VoiceChannel, TextChannel> getPermChannels() {
         return permChannels;
+    }
+
+    @SuppressWarnings("unchecked")
+    HashMap<VoiceChannel, TextChannel> getPermChannelsForGuild(Guild g) {
+        Object map = permChannels.entrySet().stream()
+                .filter(entry -> entry.getKey().getGuild().equals(g))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return (HashMap<VoiceChannel, TextChannel>) map;
     }
 
     /**

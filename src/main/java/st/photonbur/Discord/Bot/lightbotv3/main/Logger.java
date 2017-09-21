@@ -36,7 +36,7 @@ public class Logger extends ListenerAdapter {
     /**
      * Stream handling output to both the console and log file.
      */
-    private static PrintStream out;
+    public static PrintStream out;
 
     private static Logger instance;
 
@@ -154,7 +154,7 @@ public class Logger extends ListenerAdapter {
     private static void setupLogger() {
         try {
             // Create the file to write the log into
-            logFile = new File("lblog-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".txt");
+            logFile = new File("/logs/lb-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".log.txt");
 
             // Create the streams outputting the log
             fos = new FileOutputStream(logFile);
