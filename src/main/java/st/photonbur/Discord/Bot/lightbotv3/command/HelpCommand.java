@@ -27,7 +27,7 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
                 .forEach(cmd -> {
             String sb =
                     String.format("**%s** - %s", l.getDiscordController().getCommandPrefix() + cmd.getAliases()[0], cmd.getDescription()) +
-                    String.format("\n>>|%s", cmd.getAliases().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getAliases()).skip(1).sorted(String::compareToIgnoreCase).collect(Collectors.toList())) +
+                    String.format("\n>>|%s", cmd.getAliases().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getAliases()).skip(1).sorted(String::compareToIgnoreCase).map(a -> l.getDiscordController().getCommandPrefix() + a).collect(Collectors.toList())) +
                     String.format("\n>>|%s", cmd.getUsage().replace("{}", l.getDiscordController().getCommandPrefix())) +
                     String.format("\n>>|%s", cmd.getPermissionsRequired().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getPermissionsRequired()).map(Enum::name).collect(Collectors.toList()))));
 
