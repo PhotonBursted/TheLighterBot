@@ -20,6 +20,18 @@ public class Launcher {
 
     private Launcher() { }
 
+    /**
+     * As part of the Singleton design pattern, no clones of this instance are permitted.
+     *
+     * @return nothing
+     * @throws CloneNotSupportedException No clones of this instance are permitted
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
     public JDA getBot() {
         return getDiscordController().getBot();
     }

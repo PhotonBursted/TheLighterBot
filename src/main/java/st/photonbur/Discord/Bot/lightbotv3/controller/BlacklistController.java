@@ -34,6 +34,18 @@ public class BlacklistController {
     }
 
     /**
+     * As part of the Singleton design pattern, no clones of this instance are permitted.
+     *
+     * @return nothing
+     * @throws CloneNotSupportedException No clones of this instance are permitted
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
+    /**
      * Blacklists a {@link User user} or {@link Role role} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to

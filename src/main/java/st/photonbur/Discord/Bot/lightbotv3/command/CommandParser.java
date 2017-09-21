@@ -25,23 +25,8 @@ public class CommandParser extends ListenerAdapter {
     private final Set<Command> commands;
     private static CommandParser instance;
 
-    public static CommandParser getInstance() {
-        if (instance == null) {
-            instance = new CommandParser();
-        }
-
-        return instance;
-    }
-
     private CommandParser() {
         commands = new HashSet<>();
-    }
-
-    /**
-     * @return The last handled message event
-     */
-    public static GuildMessageReceivedEvent getLastEvent() {
-        return lastEvent;
     }
 
     /**
@@ -54,12 +39,34 @@ public class CommandParser extends ListenerAdapter {
     }
 
     /**
-     * Unregisters a command, stopping it from being identified as a new message comes in
+     * As part of the Singleton design pattern, no clones of this instance are permitted.
      *
-     * @param cmds The commands to remove from the registry
+     * @return nothing
+     * @throws CloneNotSupportedException No clones of this instance are permitted
      */
-    public void removeCommand(Command... cmds) {
-        commands.removeAll(Arrays.asList(cmds));
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
+    Set<Command> getCommands() {
+        return commands;
+    }
+
+    public static CommandParser getInstance() {
+        if (instance == null) {
+            instance = new CommandParser();
+        }
+
+        return instance;
+    }
+
+    /**
+     * @return The last handled message event
+     */
+    public static GuildMessageReceivedEvent getLastEvent() {
+        return lastEvent;
     }
 
     /**
@@ -91,9 +98,5 @@ public class CommandParser extends ListenerAdapter {
 
             targetCmd.prepareWithInput(input).executeCmd();
         }
-    }
-
-    public Set<Command> getCommands() {
-        return commands;
     }
 }

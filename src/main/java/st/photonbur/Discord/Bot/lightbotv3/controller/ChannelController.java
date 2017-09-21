@@ -107,6 +107,18 @@ public class ChannelController extends ListenerAdapter {
     }
 
     /**
+     * As part of the Singleton design pattern, no clones of this instance are permitted.
+     *
+     * @return nothing
+     * @throws CloneNotSupportedException No clones of this instance are permitted
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException();
+    }
+
+    /**
      * Creates a temporary category to house a fresh set of temporary channels in.
      *
      * @param g    The guild to put the new category in.
