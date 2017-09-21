@@ -131,6 +131,8 @@ public class BlacklistCommand extends Command implements Selector {
                 } else if (target instanceof Role) {
                     performBlacklist(((Role) target));
                 }
+
+                l.getFileController().saveGuild(ev.getGuild());
             } else {
                 if (target instanceof User) {
                     handleError(String.format("User **%s** is already blacklisted for this server!",

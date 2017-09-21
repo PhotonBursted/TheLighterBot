@@ -288,10 +288,9 @@ public class ChannelController extends ListenerAdapter {
 
     @SuppressWarnings("unchecked")
     WeakHashMap<VoiceChannel, TextChannel> getLinkedChannelsForGuild(Guild g) {
-        Object map = linkedChannels.entrySet().stream()
+        return new WeakHashMap<>(linkedChannels.entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(g))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return (WeakHashMap<VoiceChannel, TextChannel>) map;
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     /**
@@ -303,10 +302,9 @@ public class ChannelController extends ListenerAdapter {
 
     @SuppressWarnings("unchecked")
     WeakHashMap<VoiceChannel, TextChannel> getPermChannelsForGuild(Guild g) {
-        Object map = permChannels.entrySet().stream()
+        return new WeakHashMap<>(permChannels.entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(g))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return (WeakHashMap<VoiceChannel, TextChannel>) map;
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     /**

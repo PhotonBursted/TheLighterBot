@@ -21,6 +21,7 @@ public class UnpermanentChannelCommand extends Command {
                         String.format("Successfully made **%s** temporary!%s", vc.getName(),
                                 l.getChannelController().isLinked(vc) ? "\n__Be aware that leaving the channel empty will now delete the channel!__" : ""),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+                l.getFileController().saveGuild(ev.getGuild());
             } else {
                 handleError(MessageContent.CHANNEL_NOT_PERMANENT);
             }

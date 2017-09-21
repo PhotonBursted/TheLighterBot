@@ -20,6 +20,7 @@ public class PermanentChannelCommand extends Command {
                 l.getDiscordController().sendMessage(ev,
                         String.format("Successfully made **%s** permanent!", vc.getName()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+                l.getFileController().saveGuild(ev.getGuild());
             } else {
                 handleError(MessageContent.CHANNEL_ALREADY_PERMANENT);
             }

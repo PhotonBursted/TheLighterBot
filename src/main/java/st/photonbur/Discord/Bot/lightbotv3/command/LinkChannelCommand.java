@@ -27,6 +27,7 @@ public class LinkChannelCommand extends Command {
                 l.getDiscordController().sendMessage(ev,
                         String.format("Successfully linked **%s** to **%s**!", vc.getName(), tc.getAsMention()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+                l.getFileController().saveGuild(ev.getGuild());
             } else {
                 handleError(MessageContent.CHANNEL_ALREADY_LINKED);
             }

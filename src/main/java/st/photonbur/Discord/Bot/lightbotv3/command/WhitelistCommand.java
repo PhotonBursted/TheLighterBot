@@ -129,6 +129,8 @@ public class WhitelistCommand extends Command implements Selector {
                 } else if (target instanceof Role) {
                     performWhitelist(((Role) target));
                 }
+
+                l.getFileController().saveGuild(ev.getGuild());
             } else {
                 if (target instanceof User) {
                     handleError(String.format("User **%s** is already whitelisted for this server!",
