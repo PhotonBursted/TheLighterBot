@@ -14,6 +14,8 @@ public class InfoCommand extends Command {
         EmbedBuilder eb = new EmbedBuilder();
         eb.addField("General information",
                 "Name: `TheLighterBot`\n" +
+                "Description: `A temporary channel service inspired by TeamSpeak's temporary channels`\n" +
+                "\n" +
                 "Author: `PhotonBurst#6983`\n" +
                 "Website: `https://github.com/PhotonBursted/TheLighterBot`\n" +
                 "Invite: `http://photonbur.st/auth/discord/thelighterbot`\n" +
@@ -23,7 +25,7 @@ public class InfoCommand extends Command {
                 "Library: `JDA v" + JDAInfo.VERSION + "`\n" +
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 
-        Logger.logAndDelete("Showed bot info.");
+        Logger.logAndDelete("Showed bot info");
         l.getDiscordController().sendMessage(ev, Color.WHITE, eb);
     }
 
