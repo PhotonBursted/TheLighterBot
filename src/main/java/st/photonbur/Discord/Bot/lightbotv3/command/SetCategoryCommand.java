@@ -63,7 +63,8 @@ public class SetCategoryCommand extends Command implements Selector {
     String getUsage() {
         return "{}setcat <searchTerm>\\n\" +\n" +
                 "    <searchTerm> can be any of:\n" +
-                "       - <search> - searches for a category ID\n" +
+                "       - <search> - searches for a category ID.\n" +
+                "         This can also be `remove` or `null` to remove the default category.\n" +
                 "       - cat:<search> - searches for a category with the name of <search>";
     }
 
