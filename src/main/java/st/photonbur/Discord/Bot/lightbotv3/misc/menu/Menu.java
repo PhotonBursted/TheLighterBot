@@ -3,6 +3,7 @@ package st.photonbur.Discord.Bot.lightbotv3.misc.menu;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 
@@ -108,6 +109,9 @@ public abstract class Menu extends ListenerAdapter {
         // Remove the reaction which was added in this event.
         // Do this with a slight delay to prevent graphical glitches client side.
         ev.getReaction().removeReaction(ev.getUser()).queueAfter(50, TimeUnit.MILLISECONDS);
+
+        // If the one adding a reaction wasn't the command issuer, don't do anything
+        if (!ev.getUser().equals(CommandParser.getLastEvent().getAuthor())) return;
 
         // Figure out which control was clicked
         Control selectedOption = Arrays.stream(controls)
