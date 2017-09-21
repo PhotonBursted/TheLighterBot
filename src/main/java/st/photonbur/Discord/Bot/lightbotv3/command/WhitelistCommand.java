@@ -110,7 +110,7 @@ public class WhitelistCommand extends Command implements Selector {
 
     @Override
     String getUsage() {
-        return "{}whitelist <searchTerm>.\n" +
+        return "{}whitelist <searchTerm>\n" +
                 "    <searchTerm> can be any of:\n" +
                 "       - <search> - searches for a role/user ID\n" +
                 "       - user:<search> - searches for a user with the name of <search>\n" +

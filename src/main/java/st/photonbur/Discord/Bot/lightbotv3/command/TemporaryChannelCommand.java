@@ -90,7 +90,7 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     String getUsage() {
-        return "{}tempchan <name>.\n" +
+        return "{}tempchan <name>\n" +
                 "    <name> specifies the name for the to be generated collection of channels.";
     }
 }
