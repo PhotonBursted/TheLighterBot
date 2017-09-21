@@ -28,7 +28,7 @@ public class Logger extends ListenerAdapter {
     /**
      * The file to write the log to.
      */
-    private static File logFile;
+    private static File logFile = new File("logs/lb-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".log.txt");
     /**
      * Stream handling output to the log file.
      */
@@ -154,7 +154,10 @@ public class Logger extends ListenerAdapter {
     private static void setupLogger() {
         try {
             // Create the file to write the log into
-            logFile = new File("/logs/lb-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date()) + ".log.txt");
+            if (!logFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                logFile.createNewFile();
+            }
 
             // Create the streams outputting the log
             fos = new FileOutputStream(logFile);
