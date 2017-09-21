@@ -42,7 +42,7 @@ public class FileController {
     }
 
     public void readAllGuilds() {
-        File directory = new File("/guilds");
+        File directory = new File("guilds/");
 
         if (!directory.exists()) {
             if (!directory.mkdir()) {
@@ -51,20 +51,35 @@ public class FileController {
             }
         }
 
-        File[] guildFiles = directory.listFiles((dir, name) -> dir.isFile() && name.endsWith(".guild.json"));
+        File[] guildFiles = directory.listFiles((dir, name) -> name.endsWith(".guild.json"));
+        Logger.log("Processing all guild files...");
         if (guildFiles != null) {
             for (File file : guildFiles) {
                 readGuild(file);
             }
         }
+        Logger.log(String.format("Done processing guild files.\n\nFound %d pairs of permanent and %d pairs of linked channels.",
+                l.getChannelController().getPermChannels().size(), l.getChannelController().getLinkedChannels().size()));
     }
 
     private void readGuild(File file) {
         try {
             JsonObject guildObject = new JsonParser().parse(new BufferedReader(new FileReader(file))).getAsJsonObject();
+            Guild g = l.getBot().getGuildById(file.getName().substring(0, file.getName().indexOf(".")));
+
+            if (guildObject.has("blacklist")) {
+                guildObject.get("blacklist").getAsJsonArray().iterator().forEachRemaining(elem -> {
+                    String entity = elem.getAsString();
+
+                    if (entity.startsWith("role")) {
+                        l.getBlacklistController().blacklist(g, l.getBot().getRoleById(entity.split("\\|")[1]));
+                    } else if (entity.startsWith("user")) {
+                        l.getBlacklistController().blacklist(g, l.getBot().getUserById(entity.split("\\|")[1]));
+                    }
+                });
+            }
 
             if (guildObject.has("defCategory")) {
-                Guild g = l.getBot().getGuildById(file.getName().substring(0, file.getName().indexOf(".")));
                 Category c = l.getBot().getCategoryById(guildObject.get("defCategory").getAsString());
 
                 if (g != null && c != null) {
@@ -99,7 +114,15 @@ public class FileController {
     }
 
     public void saveGuild(Guild g) {
-        File dest = new File("/guilds/" + g.getId() + ".guild.json");
+        File dest = new File("guilds/" + g.getId() + ".guild.json");
+        try {
+            if (dest.createNewFile()) {
+                Logger.log("Created new file for saving guild " + g.getId());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
         WeakHashMap<VoiceChannel, TextChannel> linkedChannelPairs = l.getChannelController().getLinkedChannelsForGuild(g);
         WeakHashMap<VoiceChannel, TextChannel> permChannelPairs = l.getChannelController().getPermChannelsForGuild(g);
 
@@ -107,6 +130,18 @@ public class FileController {
             try (JsonWriter jw = new JsonWriter(new BufferedWriter(new FileWriter(dest)))) {
                 jw.setIndent("  ");
                 jw.beginObject();
+
+                if (l.getBlacklistController().getForGuild(g) != null) {
+                    jw.name("blacklist").beginArray();
+                    l.getBlacklistController().getForGuild(g).forEach(entity -> {
+                        try {
+                            jw.value(entity.getClass().getSimpleName().toLowerCase().replace("impl", "") + "|" + entity.getId());
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                    jw.endArray();
+                }
 
                 if (l.getChannelController().getCategories().containsKey(g)) {
                     jw.name("defCategory").value(l.getChannelController().getCategories().get(g).getId());
@@ -135,7 +170,6 @@ public class FileController {
                     });
                     jw.endObject();
                 }
-                jw.endObject();
 
                 jw.endObject();
             } catch (IOException ex) {
