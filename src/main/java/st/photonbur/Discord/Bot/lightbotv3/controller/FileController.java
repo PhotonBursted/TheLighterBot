@@ -114,20 +114,18 @@ public class FileController {
     }
 
     public void saveGuild(Guild g) {
+        Logger.log("Saving " + g.getName());
         File dest = new File("guilds/" + g.getId() + ".guild.json");
-        try {
-            if (dest.createNewFile()) {
-                Logger.log("Created new file for saving guild " + g.getId());
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
 
         WeakHashMap<VoiceChannel, TextChannel> linkedChannelPairs = l.getChannelController().getLinkedChannelsForGuild(g);
         WeakHashMap<VoiceChannel, TextChannel> permChannelPairs = l.getChannelController().getPermChannelsForGuild(g);
 
         if (linkedChannelPairs.size() > 0 || permChannelPairs.size() > 0 || l.getChannelController().getCategories().containsKey(g)) {
             try (JsonWriter jw = new JsonWriter(new BufferedWriter(new FileWriter(dest)))) {
+                if (dest.createNewFile()) {
+                    Logger.log("Created new file for saving guild " + g.getId());
+                }
+
                 jw.setIndent("  ");
                 jw.beginObject();
 
