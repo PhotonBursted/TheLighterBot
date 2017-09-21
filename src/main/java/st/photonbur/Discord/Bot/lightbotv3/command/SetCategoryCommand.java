@@ -19,10 +19,10 @@ public class SetCategoryCommand extends Command implements Selector {
 
     @Override
     void execute() throws RateLimitedException {
-        if (input.size() >= 2) {
+        if (input.size() >= 1) {
             search = Utils.drainQueueToString(input);
 
-            if (search.contains(":")) {
+            if (search.startsWith("cat:")) {
                 List<Category> candidates = l.getBot().getCategoriesByName(String.join(":", Arrays.copyOfRange(search.split(":"), 1, search.split(":").length)), true);
                 if (candidates.size() > 0) {
                     LinkedHashMap<String, Category> candidateMap = new LinkedHashMap<>();
@@ -37,6 +37,8 @@ public class SetCategoryCommand extends Command implements Selector {
             } else {
                 c = null;
             }
+
+            performCategoryChange();
         } else {
             handleError("The category to set wasn't specified!");
         }
@@ -59,7 +61,10 @@ public class SetCategoryCommand extends Command implements Selector {
 
     @Override
     String getUsage() {
-        return null;
+        return "{}setcat <searchTerm>\\n\" +\n" +
+                "    <searchTerm> can be any of:\n" +
+                "       - <search> - searches for a category ID\n" +
+                "       - cat:<search> - searches for a category with the name of <search>";
     }
 
     @Override
@@ -67,23 +72,27 @@ public class SetCategoryCommand extends Command implements Selector {
         if (selEv.selectionWasMade()) {
             c = (Category) selEv.getSelectedOption();
 
-            if (c != null || search.equals("remove") || search.equals("null")) {
-                if (c == null) {
-                    l.getChannelController().getCategories().remove(ev.getGuild());
-                    l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.");
-                    Logger.logAndDelete("Removed default category from " + ev.getGuild().getName());
-                } else {
-                    l.getChannelController().getCategories().put(ev.getGuild(), c);
-                    l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")");
-                    Logger.logAndDelete("Added default category to " + c.getName() + " for " + ev.getGuild().getName());
-                }
-
-                l.getFileController().saveGuild(ev.getGuild());
-            } else {
-                handleError("The category you specified couldn't be found!");
-            }
+            performCategoryChange();
         } else {
             handleError("The category change was cancelled.");
+        }
+    }
+
+    private void performCategoryChange() {
+        if (c != null || search.equals("remove") || search.equals("null")) {
+            if (c == null) {
+                l.getChannelController().getCategories().remove(ev.getGuild());
+                l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.");
+                Logger.logAndDelete("Removed default category from " + ev.getGuild().getName());
+            } else {
+                l.getChannelController().getCategories().put(ev.getGuild(), c);
+                l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")");
+                Logger.logAndDelete("Set default category to " + c.getName() + " for " + ev.getGuild().getName());
+            }
+
+            l.getFileController().saveGuild(ev.getGuild());
+        } else {
+            handleError("The category you specified couldn't be found!");
         }
     }
 }
