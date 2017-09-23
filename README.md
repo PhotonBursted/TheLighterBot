@@ -15,3 +15,7 @@ For now, this will purely be a rebuild. This means its sole purpose will be to b
 
 <h3>Technology</h3>
 For this, I'm using <a href="https://www.jetbrains.com/idea">IntelliJ IDEA Ultimate</a> as IDE. Added to that I'm using the <a href="https://github.com/DV8FromTheWorld/JDA">JDA</a> library for interfacing with Discord and Gson for interacting with the JSON config files.
+
+<h3>Links</h3>
+Invite to your server: http://photonbur.st/auth/discord/thelighterbot<br/>
+Discord server: https://discord.gg/sU4pzV4
