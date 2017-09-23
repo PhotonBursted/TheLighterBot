@@ -6,6 +6,8 @@ import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
+import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputListener;
+import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputEvent;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -16,9 +18,10 @@ import java.util.Scanner;
  * General manager of all parts of the bot.
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
-public class Launcher {
+public class Launcher implements ConsoleInputListener {
     private static Launcher instance;
     private Properties props = new Properties();
+    private Scanner sc;
 
     private Launcher() { }
 
@@ -74,6 +77,18 @@ public class Launcher {
         Launcher.getInstance().run();
     }
 
+    @Override
+    public void onConsoleInput(ConsoleInputEvent ev) {
+        String input = ev.getInput();
+
+        if (input.equals("exit")) {
+            sc.close();
+            shutdown();
+        } else if (input.equals("reload")) {
+            getFileController().readAllGuilds();
+        }
+    }
+
     /**
      * Starts up the bot and every component necessary to work properly.
      */
@@ -111,18 +126,9 @@ public class Launcher {
                 new WhitelistCommand()
         );
 
-        Scanner sc = new Scanner(System.in);
-        while (sc.hasNextLine()) {
-            String name = sc.nextLine();
-
-            if (name.equals("exit")) {
-                sc.close();
-                shutdown();
-                break;
-            } else if (name.equals("reload")) {
-                getFileController().readAllGuilds();
-            }
-        }
+        sc = new Scanner(System.in);
+        //noinspection StatementWithEmptyBody
+        while (sc.hasNextLine()) { }
     }
 
     /**

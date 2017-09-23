@@ -4,8 +4,8 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.utils.SimpleLog;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
+import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputReader;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -32,11 +32,13 @@ public class Logger extends ListenerAdapter {
     /**
      * Stream handling output to the log file.
      */
-    private FileOutputStream fos;
+    private PrintStream fOut;
     /**
      * Stream handling output to both the console and log file.
      */
     public static PrintStream out;
+    private static PrintStream err;
+    private static ConsoleInputReader in;
 
     private static Logger instance;
 
@@ -99,8 +101,7 @@ public class Logger extends ListenerAdapter {
 
             // Check if the stack trace element is currently from within the Logger class or the last available
             if ((
-                    !ste.getClassName().contains(Logger.class.getName()) &&
-                    !ste.getClassName().contains(SimpleLog.class.getName())
+                    !ste.getClassName().contains(Logger.class.getName())
             ) || i == stes.length - 1) {
                 // Determine the actual stack trace element target (compensated by the offset)
                 ste = stes[Arrays.asList(stes).indexOf(ste) - offset];
@@ -162,36 +163,40 @@ public class Logger extends ListenerAdapter {
             }
 
             // Create the streams outputting the log
-            fos = new FileOutputStream(logFile);
-            // This stream is a crude implementation of Apache Commons' TeeOutputStream.
-            // In essence it overrides the normal OutputStream behaviour to output its contents into two places simultaneously.
-            out = new PrintStream(new OutputStream() {
+            fOut = new PrintStream(new BufferedOutputStream(new FileOutputStream(logFile)), true);
+
+            // Store references to the standard out- and input streams
+            PrintStream stdOut = System.out;
+            PrintStream stdErr = System.err;
+            InputStream stdIn = System.in;
+
+            // Initialize and set streams to replace the standard ones.
+            // This to allow for exporting all of standard in- and out to the log file.
+            out = new PrintStream(new BufferedOutputStream(new OutputStream() {
                 @Override
                 public void write(int b) throws IOException {
-                    System.out.write(b);
-                    fos.write(b);
+                    fOut.write(b);
+                    stdOut.write(b);
                 }
-            });
+            }), true);
+            System.setOut(out);
+
+            err = new PrintStream(new BufferedOutputStream(new OutputStream() {
+                @Override
+                public void write(int b) throws IOException {
+                    fOut.write(b);
+                    stdErr.write(b);
+                }
+            }), true);
+            System.setErr(err);
+
+            in = new ConsoleInputReader(stdIn, fOut);
+            in.addListener(Launcher.getInstance());
+            System.setIn(in);
 
             // Notify that the logger has started outputting info
             Logger.log("Started routing to file and System.out...\n" +
                     " - File: " + logFile.getPath());
-
-            SimpleLog.LEVEL = SimpleLog.Level.OFF;
-            // Configure SimpleLog in such a way that it will send its messages through this logger
-            SimpleLog.addListener(new SimpleLog.LogListener() {
-                @Override
-                public void onError(SimpleLog log, Throwable err) {}
-
-                @Override
-                public void onLog(SimpleLog log, SimpleLog.Level logLevel, Object message) {
-                    if (logLevel.getPriority() > 2) {
-                        if (!log.name.equals("RestAction") && !message.toString().contains("10008")) {
-                            log(String.format("[%s] [%s]: %s", log.name, logLevel.getTag().toUpperCase(), message), -2);
-                        }
-                    }
-                }
-            });
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -202,8 +207,10 @@ public class Logger extends ListenerAdapter {
      */
     void shutdown() {
         try {
-            if (fos != null) fos.close();
+            if (fOut != null) fOut.close();
             if (out != null) out.close();
+            if (err != null) err.close();
+            if (in != null) in.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
