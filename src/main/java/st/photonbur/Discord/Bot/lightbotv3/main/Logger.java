@@ -159,6 +159,8 @@ public class Logger extends ListenerAdapter {
             // Create the file to write the log into
             if (!logFile.exists()) {
                 //noinspection ResultOfMethodCallIgnored
+                logFile.getParentFile().mkdir();
+                //noinspection ResultOfMethodCallIgnored
                 logFile.createNewFile();
             }
 
