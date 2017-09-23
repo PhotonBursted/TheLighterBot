@@ -25,17 +25,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChannelController extends ListenerAdapter {
     private enum EventType {
-        LEAVE("left"), JOIN("joined"), MOVE("");
-
-        private final String verb;
-
-        EventType(String verb) {
-            this.verb = verb;
-        }
-
-        public String getVerb() {
-            return this.verb;
-        }
+        LEAVE, JOIN, MOVE
     }
 
     /**
@@ -134,17 +124,10 @@ public class ChannelController extends ListenerAdapter {
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        Category c = (Category) cAction
+        return (Category) cAction
                 .setParent(categories.get(g))
                 .reason("A new set of temporary channels was issued, needing an new category as no default was specified")
                 .complete();
-
-        Logger.log("Added temp category:\n" +
-                " - id: " + c.getId() + "\n" +
-                " - name: \"" + c.getName() + "\""
-        );
-
-        return c;
     }
 
     /**
@@ -170,17 +153,10 @@ public class ChannelController extends ListenerAdapter {
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        TextChannel tc = (TextChannel) tcAction
+        return (TextChannel) tcAction
                 .setParent(parent)
                 .reason("A new temporary channel was issued by " + Utils.userAsString(ev.getAuthor()))
                 .complete();
-
-        Logger.log("Added temp text channel:\n" +
-                " - id: " + tc.getId() + "\n" +
-                " - name: \"" + tc.getName() + "\""
-        );
-
-        return tc;
     }
 
     /**
@@ -202,17 +178,10 @@ public class ChannelController extends ListenerAdapter {
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        VoiceChannel vc = (VoiceChannel) vcAction
+        return (VoiceChannel) vcAction
                 .setParent(parent)
                 .reason("A new temporary channel was issued by " + Utils.userAsString(ev.getAuthor()))
                 .complete();
-
-        Logger.log("Added temp voice channel:\n" +
-                "  id: " + vc.getId() + "\n" +
-                "  name: \"" + vc.getName() + "\""
-        );
-
-        return vc;
     }
 
     /**
@@ -225,12 +194,6 @@ public class ChannelController extends ListenerAdapter {
     private static boolean deleteLinkedChannel(Channel c) {
         if (c != null) {
             c.delete().reason("This temporary channel had no people left in it").queue();
-
-            Logger.log("Deleted temporary channel:\n" +
-                    " - id: " + c.getId() + "\n" +
-                    " - name: \"" + c.getName() + "\"\n" +
-                    " - type: " + c.getClass().getSimpleName().replace("Impl", "")
-            );
 
             return true;
         } else {
@@ -381,36 +344,6 @@ public class ChannelController extends ListenerAdapter {
         return permChannels.containsValue(tc);
     }
 
-
-    /**
-     * Logs an event to the logs.
-     *
-     * @param type   The type of event to log
-     * @param member The member who triggered the event
-     * @param vcs    The voice channel(s) in question
-     */
-    private void logEvent(@Nullable EventType type, Member member, VoiceChannel... vcs) {
-        String message = "";
-
-        if (type != null) {
-            int amountOfMembers = vcs[0].getMembers().size();
-
-            message += member.getEffectiveName() + " " + type.getVerb() + " channel \"" + vcs[0].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
-                    "There " + (amountOfMembers == 1 ? "is" : "are") + " now " + amountOfMembers + " member" + (amountOfMembers == 1 ? "" : "s") + " in the channel.";
-        } else {
-            int[] amountOfMembers = new int[vcs.length];
-            for (int i = 0; i < vcs.length; i++) {
-                amountOfMembers[i] = vcs[i].getMembers().size();
-            }
-
-            message += member.getEffectiveName() + " moved from \"" + vcs[0].getName() + "\" to \"" + vcs[1].getName() + "\" in \"" + vcs[0].getGuild().getName() + "\".\n" +
-                    "There " + (amountOfMembers[0] == 1 ? "is" : "are") + " now " + amountOfMembers[0] + " member" + (amountOfMembers[0] == 1 ? "" : "s") + " in the left channel\n" +
-                    "  and " + amountOfMembers[1] + " member" + (amountOfMembers[1] == 1 ? "" : "s") + " in the joined channel.";
-        }
-
-        Logger.log(message);
-    }
-
     /**
      * Fired when a member joins a voice channel.
      *
@@ -418,7 +351,6 @@ public class ChannelController extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceJoin(GuildVoiceJoinEvent ev) {
-        logEvent(EventType.JOIN, ev.getMember(), ev.getChannelJoined());
         respondToJoin(ev.getChannelJoined(), ev.getMember());
 
         informUserAbout(EventType.JOIN, ev.getMember(), ev.getChannelJoined());
@@ -431,7 +363,6 @@ public class ChannelController extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceMove(GuildVoiceMoveEvent ev) {
-        logEvent(null, ev.getMember(), ev.getChannelLeft(), ev.getChannelJoined());
         respondToMove(ev.getChannelJoined(), ev.getChannelLeft(), ev.getMember());
 
         informUserAbout(EventType.MOVE, ev.getMember(), ev.getChannelJoined(), ev.getChannelLeft());
@@ -444,7 +375,6 @@ public class ChannelController extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceLeave(GuildVoiceLeaveEvent ev) {
-        logEvent(EventType.LEAVE, ev.getMember(), ev.getChannelLeft());
         respondToLeave(ev.getChannelLeft(), ev.getMember());
 
         informUserAbout(EventType.LEAVE, ev.getMember(), ev.getChannelLeft());

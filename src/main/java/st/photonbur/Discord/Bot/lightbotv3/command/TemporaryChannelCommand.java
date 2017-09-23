@@ -60,6 +60,7 @@ public class TemporaryChannelCommand extends Command {
                             ev.getMember().getAsMention(), channelName),
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL
             );
+            Logger.log("Created group " + vc.getName() + "!");
             l.getFileController().saveGuild(ev.getGuild());
         } else {
             // If no channel is available, send feedback to the user

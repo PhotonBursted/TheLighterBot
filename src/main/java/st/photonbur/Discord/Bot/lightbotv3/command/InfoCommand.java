@@ -22,7 +22,7 @@ public class InfoCommand extends Command {
                 "Invite: `http://photonbur.st/auth/discord/thelighterbot`\n" +
                 "Discord server: `https://discord.gg/sU4pzV4`", false)
         .addField("Bot-specific information",
-                "Version: `3.0.0`\n" +
+                "Version: `3.0.1`\n" +
                 "Library: `JDA v" + JDAInfo.VERSION + "`\n" +
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 
