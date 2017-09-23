@@ -11,8 +11,8 @@ public class SelectorImpl<T> extends Menu {
     private Selector parent;
     private LinkedHashMap<String, T> options;
 
-    public SelectorImpl(Selector parent, Message message, LinkedHashMap<String, T> options) {
-        super(message, Control.UP, Control.DOWN, Control.ACCEPT, Control.STOP);
+    SelectorImpl(Control[] controls, LinkedHashMap<String, T> options, Selector parent, Message message) {
+        super(message, controls);
         this.options = options;
         this.parent = parent;
 

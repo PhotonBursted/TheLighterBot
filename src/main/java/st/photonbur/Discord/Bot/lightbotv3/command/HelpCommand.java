@@ -6,7 +6,7 @@ import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.Paginator;
-import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorImpl;
+import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorBuilder;
 
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -35,7 +35,10 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
         });
 
         Logger.logAndDelete("Begged for help!");
-        new PaginatorImpl(this, commandTextList, l.getDiscordController().sendMessage(ev, "Requesting help..."));
+        new PaginatorBuilder<>(this)
+                .setContent(commandTextList)
+                .setPlaceholderMessage("Requesting help...")
+                .build();
     }
 
     @Override

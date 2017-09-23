@@ -7,14 +7,15 @@ import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.Selector;
-import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorImpl;
+import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorBuilder;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class WhitelistCommand extends Command implements Selector {
     @Override
@@ -39,7 +40,9 @@ public class WhitelistCommand extends Command implements Selector {
                         LinkedHashMap<String, User> candidateMap = new LinkedHashMap<>();
                         candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), c.getUser()));
 
-                        new SelectorImpl<>(this, l.getDiscordController().sendMessage(ev, "Building selector..."), candidateMap);
+                        new SelectorBuilder<User>(this)
+                                .setOptionMap(candidateMap)
+                                .build();
                     }
                 } else {
                     handleError(String.format("No user was found in this server having name **%s!**",
@@ -59,7 +62,9 @@ public class WhitelistCommand extends Command implements Selector {
                         LinkedHashMap<String, Role> candidateMap = new LinkedHashMap<>();
                         candidates.forEach(c -> candidateMap.put(c.getName(), c));
 
-                        new SelectorImpl<>(this, l.getDiscordController().sendMessage(ev, "Building selector..."), candidateMap);
+                        new SelectorBuilder<Role>(this)
+                                .setOptionMap(candidateMap)
+                                .build();
                     }
                 } else {
                     handleError(String.format("The role you searched for (with name %s) couldn't be found!",

@@ -23,8 +23,8 @@ public class PaginatorImpl extends Menu {
      * @param content  The content to show in the paginator
      * @param message  The message to hook the menu into
      */
-    public PaginatorImpl(Paginator<?> parent, LinkedList<String> content, Message message) {
-        super(message, Control.PREV, Control.STOP, Control.NEXT);
+    PaginatorImpl(Control[] controls, LinkedList<String> content, Paginator<?> parent, Message message) {
+        super(message, controls);
         this.content = parent.groupContent(content, ITEM_SEPARATOR);
         this.currPage = 0;
         this.parent = parent;
