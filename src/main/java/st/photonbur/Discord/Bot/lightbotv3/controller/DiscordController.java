@@ -107,13 +107,17 @@ public class DiscordController {
      *
      * @see EmbedBuilder
      */
-    public void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype) {
+    public void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype, long secondsBeforeDeletion) {
         e.getMessage().getChannel().sendMessage(embedPrototype
                 .setColor(color)
                 .setFooter("Result of " + e.getMessage().getRawContent(), null)
                 .setTimestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Amsterdam")).withZoneSameInstant(ZoneOffset.UTC))
                 .build()
-        ).queue();
+        ).queue((message) -> {
+            if (secondsBeforeDeletion > 0) {
+                message.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS);
+            }
+        });
     }
 
     /**

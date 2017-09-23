@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import java.awt.*;
@@ -26,7 +27,8 @@ public class InfoCommand extends Command {
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 
         Logger.logAndDelete("Showed bot info");
-        l.getDiscordController().sendMessage(ev, Color.WHITE, eb);
+        l.getDiscordController().sendMessage(ev, Color.WHITE, eb,
+                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
 
     @Override
