@@ -15,7 +15,11 @@ public class ConsoleInputReader extends InputStream {
     /**
      * Stores the received characters stdIn a list of integers
      */
-    private ArrayList<Integer> buffer = new ArrayList<>();
+    private final ArrayList<Integer> buffer = new ArrayList<>();
+    /**
+     * Stores the OS-specific line separator.
+     */
+    private static final String lineSep = System.getProperty("line.separator");
 
     /**
      * The stream to read from
@@ -43,10 +47,11 @@ public class ConsoleInputReader extends InputStream {
         buffer.add(b);
 
         // Check if the end of the buffer is a new line
-        if (buffer.size() >= 2 && buffer.get(buffer.size() - 2) == 13 && buffer.get(buffer.size() - 1) == 10) {
+        if (bufferEndsWith(lineSep)) {
             // Remove the newline characters
-            buffer.remove(buffer.size() - 2);
-            buffer.remove(buffer.size() - 1);
+            for (int i = 0; i < lineSep.length(); i++) {
+                buffer.remove(buffer.size() - 1);
+            }
 
             // Let the user handle the input
             listeners.forEach(listener -> listener.onConsoleInput(new ConsoleInputEvent(toString())));
@@ -56,8 +61,29 @@ public class ConsoleInputReader extends InputStream {
         }
     }
 
+    /**
+     * Adds a listener to this instance of the reader.
+     * Every listener will get called when a new input is detected.
+     * @param listener The instance to add to be informed about new inputs
+     */
     public void addListener(ConsoleInputListener listener) {
         listeners.add(listener);
+    }
+
+    /**
+     * Checks if the buffer ends with a certain set of characters.
+     * @param mold The string to check against
+     */
+    private boolean bufferEndsWith(String mold) {
+        boolean matches = buffer.size() >= mold.length();
+
+        if (matches) {
+            for (int i = 0; i < mold.length(); i++) {
+                matches = matches && (int) mold.charAt(i) == buffer.get(buffer.size() - mold.length() + i);
+            }
+        }
+
+        return matches;
     }
 
     @Override
