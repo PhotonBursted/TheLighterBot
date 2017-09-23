@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * This class is in charge of everything related to interaction with Discord.
@@ -112,39 +113,7 @@ public class DiscordController {
                 .setFooter("Result of " + e.getMessage().getRawContent(), null)
                 .setTimestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Amsterdam")).withZoneSameInstant(ZoneOffset.UTC))
                 .build()
-        ).complete();
-    }
-
-    /**
-     * Sends a message to Discord in the form of a normal text message.
-     * @param e   The event to respond to
-     * @param msg The message to display within the message
-     *
-     * @see MessageContent
-     */
-    public void sendMessage(GuildMessageReceivedEvent e, MessageContent msg) {
-        sendMessage(e, msg, 0);
-    }
-
-    /**
-     * Sends a message to Discord in the form of a normal text message.
-     * @param e                     The event to respond to
-     * @param msg                   The message to display within the message
-     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
-     *
-     * @see MessageContent
-     */
-    public void sendMessage(GuildMessageReceivedEvent e, MessageContent msg, long secondsBeforeDeletion) {
-        sendMessage(e, msg.getMessage(), secondsBeforeDeletion);
-    }
-
-    /**
-     * Sends a message to Discord in the form of a normal text message.
-     * @param e   The event to respond to
-     * @param s   The string to display within the message
-     */
-    public Message sendMessage(GuildMessageReceivedEvent e, String s) {
-        return sendMessage(e, s, 0);
+        ).queue();
     }
 
     /**
@@ -153,14 +122,37 @@ public class DiscordController {
      * @param s                     The string to display within the message
      * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
      */
-    public Message sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion) {
-        Message msg = e.getMessage().getChannel().sendMessage(s).complete();
+    public void sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion) {
+        sendMessage(e, s, secondsBeforeDeletion, null);
+    }
 
-        if (secondsBeforeDeletion > 0) {
-            msg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS);
-        }
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param e        The event to respond to
+     * @param s        The string to display within the message
+     * @param callback The action to take when the message has been sent
+     */
+    public void sendMessage(GuildMessageReceivedEvent e, String s, Consumer<Message> callback) {
+        sendMessage(e, s, 0, callback);
+    }
 
-        return msg;
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param e                     The event to respond to
+     * @param s                     The string to display within the message
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param callback              The action to take when the message has been sent
+     */
+    public void sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion, Consumer<Message> callback) {
+        e.getChannel().sendMessage(s).queue((msg) -> {
+            if (callback != null) {
+                callback.accept(msg);
+            }
+
+            if (secondsBeforeDeletion > 0) {
+                msg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS);
+            }
+        });
     }
 
     /**
