@@ -6,9 +6,23 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Menu;
 
 import java.util.LinkedHashMap;
 
+/**
+ * Implementation of the selector type menu
+ *
+ * @param <T> The type of the options to select from
+ */
 public class SelectorImpl<T> extends Menu {
+    /**
+     * The index the user currently has selected.
+     */
     private int selectedIndex = 0;
+    /**
+     * The parent of the menu. This is the instance which is responsible for actually doing something with anything happening within the menu.
+     */
     private Selector parent;
+    /**
+     * The options available within this menu.
+     */
     private LinkedHashMap<String, T> options;
 
     SelectorImpl(Control[] controls, LinkedHashMap<String, T> options, Selector parent, Message message) {
