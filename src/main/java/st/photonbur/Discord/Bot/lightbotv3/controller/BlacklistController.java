@@ -147,55 +147,65 @@ public class BlacklistController {
         l.getChannelController().getLinkedChannels().entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(guild))
                 .forEach(entry -> {
-                    try {
-                        if (action == Action.BLACKLIST) {
-                            PermissionOverride po = Utils.getPO(entry.getValue(), entity);
+                    if (action == Action.BLACKLIST) {
+                        Utils.getPO(entry.getValue(), entity, po -> {
                             if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
-                                po.getManagerUpdatable().deny(Permission.MESSAGE_READ).update().reason(REASON).queue();
+                                po.getManagerUpdatable()
+                                        .deny(Permission.MESSAGE_READ)
+                                        .update()
+                                        .reason(REASON).queue();
                             }
+                        });
 
-                            po = Utils.getPO(entry.getKey(), entity);
+                        Utils.getPO(entry.getKey(), entity, po -> {
                             if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                po.getManagerUpdatable().deny(Permission.VIEW_CHANNEL).update().reason(REASON).queue();
+                                po.getManagerUpdatable()
+                                        .deny(Permission.VIEW_CHANNEL)
+                                        .update()
+                                        .reason(REASON).queue();
                             }
+                        });
 
-                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
-                                po = Utils.getPO(entry.getKey().getParent(), entity);
+                        if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
+                            Utils.getPO(entry.getKey().getParent(), entity, po -> {
                                 if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                    po.getManagerUpdatable().deny(Permission.VIEW_CHANNEL).update().reason(REASON).queue();
+                                    po.getManagerUpdatable()
+                                            .deny(Permission.VIEW_CHANNEL)
+                                            .update()
+                                            .reason(REASON).queue();
                                 }
-                            }
-                        } else {PermissionOverride poT = null, poV = null, poC = null;
+                            });
+                        }
+                    } else {
+                        PermissionOverride poT = null, poV = null, poC = null;
+
+                        if (entity instanceof Role) {
+                            poT = entry.getValue().getPermissionOverride((Role) entity);
+                            poV = entry.getKey().getPermissionOverride((Role) entity);
+                        } else if (entity instanceof User) {
+                            poT = entry.getValue().getPermissionOverride(guild.getMember((User) entity));
+                            poV = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+                        }
+
+                        if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
+                            Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
+                        }
+
+                        if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                            Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
+                        }
+
+                        if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
                             if (entity instanceof Role) {
-                                poT = entry.getValue().getPermissionOverride((Role) entity);
-                                poV = entry.getKey().getPermissionOverride((Role) entity);
+                                poC = entry.getKey().getParent().getPermissionOverride((Role) entity);
                             } else if (entity instanceof User) {
-                                poT = entry.getValue().getPermissionOverride(guild.getMember((User) entity));
-                                poV = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+                                poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity));
                             }
 
-                            if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
-                                Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
-                            }
-
-                            if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
-                            }
-
-                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
-                                if (entity instanceof Role) {
-                                    poC = entry.getKey().getParent().getPermissionOverride((Role) entity);
-                                } else if (entity instanceof User) {
-                                    poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity));
-                                }
-
-                                if (poC != null && poC.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                    Utils.removePermissionsFrom(poC, REASON, Permission.VIEW_CHANNEL);
-                                }
+                            if (poC != null && poC.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                Utils.removePermissionsFrom(poC, REASON, Permission.VIEW_CHANNEL);
                             }
                         }
-                    } catch (RateLimitedException ex) {
-                        ex.printStackTrace();
                     }
                 });
     }

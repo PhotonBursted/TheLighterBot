@@ -7,13 +7,8 @@ import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class TemporaryChannelSizeCommand extends Command {@Override
     public void execute() throws RateLimitedException {
@@ -60,43 +55,43 @@ public class TemporaryChannelSizeCommand extends Command {@Override
                             // If the limit is 0, this means the limit was removed
                             if (intLimit == 0) {
                                 // Remove all permissions that were blocking other users from seeing the channel
-                                Utils.removePermissionsFrom(
-                                        Utils.getPO(tc, tc.getGuild().getPublicRole()),
-                                        "The channel had its limit removed by a command from a temporary channel",
-                                        Permission.MESSAGE_READ);
-                                Utils.removePermissionsFrom(
-                                        Utils.getPO(tc, tc.getGuild().getSelfMember()),
-                                        "The channel had its limit removed by a command from a temporary channel",
-                                        Permission.MESSAGE_READ);
+                                Utils.getPO(tc, tc.getGuild().getPublicRole(), po ->
+                                        Utils.removePermissionsFrom(po,
+                                                "The channel had its limit removed by a command from a temporary channel",
+                                                Permission.MESSAGE_READ));
+                                Utils.getPO(tc, tc.getGuild().getSelfMember(), po ->
+                                        Utils.removePermissionsFrom(po,
+                                                "The channel had its limit removed by a command from a temporary channel",
+                                                Permission.MESSAGE_READ));
 
                                 for (Member m : vc.getMembers()) {
-                                    Utils.removePermissionsFrom(
-                                            Utils.getPO(tc, m),
-                                            "The channel had its limit removed by a command from a temporary channel",
-                                            Permission.MESSAGE_READ);
+                                    Utils.getPO(tc, m, po ->
+                                            Utils.removePermissionsFrom(po,
+                                                    "The channel had its limit removed by a command from a temporary channel",
+                                                    Permission.MESSAGE_READ));
                                 }
                             } else {
                                 // Revoke access for non-members of the voice channel should the channel be limited
-                                Utils.getPO(tc, ev.getGuild().getPublicRole())
+                                Utils.getPO(tc, ev.getGuild().getPublicRole(), po -> po
                                         .getManagerUpdatable()
                                         .deny(Permission.MESSAGE_READ)
                                         .update()
                                         .reason("The channel was limited by a command from a temporary channel.")
-                                        .queue();
-                                Utils.getPO(tc, ev.getGuild().getSelfMember())
+                                        .queue());
+                                Utils.getPO(tc, ev.getGuild().getSelfMember(), po -> po
                                         .getManagerUpdatable()
                                         .grant(Permission.MESSAGE_READ)
                                         .update()
                                         .reason("The channel was limited by a command from a temporary channel.")
-                                        .queue();
+                                        .queue());
 
                                 for (Member m : vc.getMembers()) {
-                                    Utils.getPO(tc, m)
+                                    Utils.getPO(tc, m, po -> po
                                             .getManagerUpdatable()
                                             .grant(Permission.MESSAGE_READ)
                                             .update()
                                             .reason("The channel was limited requiring the members to have read permissions")
-                                            .queue();
+                                            .queue());
                                 }
                             }
                         }

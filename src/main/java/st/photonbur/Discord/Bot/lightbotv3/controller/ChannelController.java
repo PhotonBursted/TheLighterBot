@@ -447,11 +447,12 @@ public class ChannelController extends ListenerAdapter {
         // should the voice channel be limited.
         if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
-                try {
-                    Utils.getPO(linkedChannels.get(vc), m).getManagerUpdatable().grant(Permission.MESSAGE_READ).update().reason("The channel was joined and is limited, requiring members to see the linked text channel").queue();
-                } catch (RateLimitedException ex) {
-                    ex.printStackTrace();
-                }
+                Utils.getPO(linkedChannels.get(vc), m,
+                        po -> po.getManagerUpdatable()
+                                .grant(Permission.MESSAGE_READ)
+                                .update()
+                                .reason("The channel was joined and is limited, requiring members to see the linked text channel")
+                                .queue());
             }
         }
     }
@@ -487,11 +488,10 @@ public class ChannelController extends ListenerAdapter {
         // should the voice channel be limited.
         if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
-                try {
-                    Utils.removePermissionsFrom(Utils.getPO(linkedChannels.get(vc), m), "The channel was left and is limited, requiring non-members to not see the associated text channel", Permission.MESSAGE_READ);
-                } catch (RateLimitedException ex) {
-                    ex.printStackTrace();
-                }
+                Utils.getPO(linkedChannels.get(vc), m,
+                        po -> Utils.removePermissionsFrom(po,
+                                "The channel was left and is limited, requiring non-members to not see the associated text channel",
+                                Permission.MESSAGE_READ));
             }
         }
     }

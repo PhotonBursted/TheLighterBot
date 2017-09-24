@@ -2,13 +2,12 @@ package st.photonbur.Discord.Bot.lightbotv3.misc;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class Utils {
@@ -29,60 +28,64 @@ public class Utils {
         return String.join(" ", inputParts.toArray(new String[inputParts.size()]));
     }
 
-    //TODO Make getPO methods use queues and callbacks
     /**
      * Gets the permission override for the channel, whether it exists or not.
      *
-     * @param c   The channel to look in
-     * @param t   The entity to find the override for
-     * @param <T> The type of the entity to find the override for
-     * @return The permission override for the entity in the channel, whether created or found
-     * @throws RateLimitedException Creating is done with complete() which might be rate limited
+     * @param c        The channel to look in
+     * @param t        The entity to find the override for
+     * @param callback The action to carry out once the override has been found
+     * @param <T>      The type of the entity to find the override for
      */
-    public static <T extends ISnowflake> PermissionOverride getPO(Channel c, T t) throws RateLimitedException {
+    public static <T extends ISnowflake> void getPO(Channel c, T t, Consumer<PermissionOverride> callback) {
         if (t instanceof Role) {
-            return getPO(c, (Role) t);
+            getPO(c, (Role) t, callback);
         } else if (t instanceof User) {
-            return getPO(c, c.getGuild().getMember((User) t));
-        } else {
-            return null;
+            getPO(c, c.getGuild().getMember((User) t), callback);
         }
     }
 
     /**
-     * Gets the permission override for the channel, whether it exists or not.
+     * Gets the permission override for the channel, whether it exists or not, and acts upon it.
      *
-     * @param c The channel to look in
-     * @param m The member to look for
-     * @return The permission override for the member in the channel, whether created or found
-     * @throws RateLimitedException Creating is done with complete() which might be rate limited
+     * @param c        The channel to look in
+     * @param m        The member to look for
+     * @param callback The action to carry out once the override has been found
      */
-    public static PermissionOverride getPO(Channel c, Member m) throws RateLimitedException {
-        PermissionOverride po;
+    @SuppressWarnings("Duplicates")
+    public static void getPO(Channel c, Member m, Consumer<PermissionOverride> callback) {
         if (c.getPermissionOverride(m) != null) {
-            po = c.getPermissionOverride(m);
+            if (callback != null) callback.accept(c.getPermissionOverride(m));
         } else {
-            po = c.createPermissionOverride(m).reason("A permission override was required for a bot related action").complete();
+            c.createPermissionOverride(m)
+                    .reason("A permission override was required for a bot related action")
+                    .queue((po) -> {
+                        if (callback != null) {
+                            callback.accept(po);
+                        }
+                    });
         }
-        return po;
     }
 
     /**
      * Gets the permission override for the channel, whether it exists or not.
      *
-     * @param c The channel to look in
-     * @param r The role to look for
-     * @return The permission override for the role in the channel, whether created or found
-     * @throws RateLimitedException Creating is done with complete() which might be rate limited
+     * @param c        The channel to look in
+     * @param r        The role to look for
+     * @param callback The action to carry out once the override has been found
      */
-    public static PermissionOverride getPO(Channel c, Role r) throws RateLimitedException {
-        PermissionOverride po;
+    @SuppressWarnings("Duplicates")
+    public static void getPO(Channel c, Role r, Consumer<PermissionOverride> callback) {
         if (c.getPermissionOverride(r) != null) {
-            po = c.getPermissionOverride(r);
+            if (callback != null) callback.accept(c.getPermissionOverride(r));
         } else {
-            po = c.createPermissionOverride(r).reason("A permission override was required for a bot related action").complete();
+            c.createPermissionOverride(r)
+                    .reason("A permission override was required for a bot related action")
+                    .queue((po) -> {
+                        if (callback != null) {
+                            callback.accept(po);
+                        }
+                    });
         }
-        return po;
     }
 
     /**
