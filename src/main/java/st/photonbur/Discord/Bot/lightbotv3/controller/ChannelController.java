@@ -9,7 +9,6 @@ import net.dv8tion.jda.core.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
@@ -20,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -112,11 +112,11 @@ public class ChannelController extends ListenerAdapter {
     /**
      * Creates a temporary category to house a fresh set of temporary channels in.
      *
-     * @param g    The guild to put the new category in.
-     * @param name The name to give the category.
-     * @return The category created by this method.
+     * @param g        The guild to put the new category in.
+     * @param name     The name to give the category.
+     * @param callback The action to perform after creating this category.
      */
-    public Category createTempCategory(Guild g, String name) {
+    public void createTempCategory(Guild g, String name, Consumer<Category> callback) {
         // Creates an intermediate action which only contains the name of the new category.
         ChannelAction cAction = g.getController().createCategory("Temp: " + name);
 
@@ -124,21 +124,24 @@ public class ChannelController extends ListenerAdapter {
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        return (Category) cAction
-                .setParent(categories.get(g))
+        cAction.setParent(categories.get(g))
                 .reason("A new set of temporary channels was issued, needing an new category as no default was specified")
-                .complete();
+                .queue((c) -> {
+                    if (callback != null) {
+                        callback.accept(((Category) c));
+                    }
+                });
     }
 
     /**
      * Creates a temporary text channel.
      *
-     * @param ev     The event which caused the new channel to be created.
-     * @param name   The name to give the channel.
-     * @param parent The category to house the new channel in.
-     * @return The category created by this method.
+     * @param ev       The event which caused the new channel to be created.
+     * @param name     The name to give the channel.
+     * @param parent   The category to house the new channel in.
+     * @param callback The action to perform after creating this text channel.
      */
-    public TextChannel createTempTextChannel(GuildMessageReceivedEvent ev, String name, Category parent) throws RateLimitedException {
+    public void createTempTextChannel(GuildMessageReceivedEvent ev, String name, Category parent, Consumer<TextChannel> callback) {
         // Creates an intermediate action which only contains the name of the new text channel.
         ChannelAction tcAction = ev.getGuild().getController().createTextChannel(Utils.ircify("tdc-" + name))
                 .addPermissionOverride(ev.getGuild().getPublicRole(),
@@ -153,35 +156,41 @@ public class ChannelController extends ListenerAdapter {
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        return (TextChannel) tcAction
-                .setParent(parent)
+        tcAction.setParent(parent)
                 .reason("A new temporary channel was issued by " + Utils.userAsString(ev.getAuthor()))
-                .complete();
+                .queue((tc) -> {
+                    if (callback != null) {
+                        callback.accept(((TextChannel) tc));
+                    }
+                });
     }
 
     /**
      * Creates a temporary voice channel.
      *
-     * @param ev     The event which caused the new channel to be created.
-     * @param name   The name to give the channel.
-     * @param parent The category to house the new channel in.
-     * @return The category created by this method.
+     * @param ev       The event which caused the new channel to be created.
+     * @param name     The name to give the channel.
+     * @param parent   The category to house the new channel in.
+     * @param callback The action to perform after creating this voice channel.
      */
-    public VoiceChannel createTempVoiceChannel(GuildMessageReceivedEvent ev, String name, Category parent) throws RateLimitedException {
+    public void createTempVoiceChannel(GuildMessageReceivedEvent ev, String name, Category parent, Consumer<VoiceChannel> callback) {
         // Creates an intermediate action which only contains the name of the new voice channel.
         ChannelAction vcAction = ev.getGuild().getController().createVoiceChannel("[T] " + name)
                 .addPermissionOverride(ev.getGuild().getPublicRole(),
-                        Permission.getRaw(Permission.MESSAGE_READ, Permission.VOICE_CONNECT),
+                        Permission.getRaw(Permission.VIEW_CHANNEL),
                         0);
 
-        applyBlacklist(ev.getGuild(), vcAction, Permission.MESSAGE_READ, Permission.VOICE_CONNECT);
+        applyBlacklist(ev.getGuild(), vcAction, Permission.VIEW_CHANNEL);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
-        return (VoiceChannel) vcAction
-                .setParent(parent)
+        vcAction.setParent(parent)
                 .reason("A new temporary channel was issued by " + Utils.userAsString(ev.getAuthor()))
-                .complete();
+                .queue((vc) -> {
+                    if (callback != null) {
+                        callback.accept(((VoiceChannel) vc));
+                    }
+                });
     }
 
     /**

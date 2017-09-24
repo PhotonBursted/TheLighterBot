@@ -43,7 +43,7 @@ public abstract class Menu extends ListenerAdapter {
      */
     private ScheduledFuture<?> timeoutFuture;
 
-    public Menu(Message message, Control... controls) {
+    protected Menu(Message message, Control... controls) {
         this.controls = controls;
         this.message = message;
         this.messageTimeout = new ScheduledThreadPoolExecutor(1);

@@ -22,7 +22,7 @@ public abstract class MenuBuilder<T> {
      */
     protected T parent;
 
-    public MenuBuilder(T parent) {
+    protected MenuBuilder(T parent) {
         // Set the parent responsible for dealing with events
         setParent(parent);
     }

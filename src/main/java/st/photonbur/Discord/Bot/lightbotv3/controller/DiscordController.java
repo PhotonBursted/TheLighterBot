@@ -8,7 +8,6 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
-import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
@@ -147,7 +146,7 @@ public class DiscordController {
      * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
      * @param callback              The action to take when the message has been sent
      */
-    public void sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion, Consumer<Message> callback) {
+    private void sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion, Consumer<Message> callback) {
         e.getChannel().sendMessage(s).queue((msg) -> {
             if (callback != null) {
                 callback.accept(msg);

@@ -5,7 +5,6 @@ import net.dv8tion.jda.core.entities.ISnowflake;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -19,7 +18,7 @@ import java.util.List;
 
 public class BlacklistCommand extends Command implements Selector {
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         // Check if the input actually had enough arguments
         if (input.size() >= 1) {
             // Get the input after the arguments as one string representation

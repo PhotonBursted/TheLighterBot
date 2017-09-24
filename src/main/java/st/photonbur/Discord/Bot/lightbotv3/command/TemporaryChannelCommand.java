@@ -3,19 +3,41 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
 import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.*;
 
 public class TemporaryChannelCommand extends Command {
+    /**
+     * Constructs the temporary channels needed to complete and instantiate a temporary channel set.
+     *
+     * @param channelName The name to base the new channels off of
+     * @param parent      The category to house the new channels under
+     */
+    private void createTemporaryChannels(String channelName, Category parent) {
+        // No parent was found so a new category will have to be created
+        if (parent == null) {
+            l.getChannelController().createTempCategory(ev.getGuild(), channelName,
+                    newCat -> createTemporaryChannels(channelName, newCat));
+        } else {
+            // Create voice and text channel
+            l.getChannelController().createTempVoiceChannel(ev, channelName, parent,
+                    vc -> l.getChannelController().createTempTextChannel(ev, channelName, parent,
+                            tc -> {
+                                // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
+                                l.getChannelController().getLinkedChannels().put(vc, tc);
+                                l.getChannelController().setNewChannelTimeout(vc);
+
+                                // Update the configs regarding the affected guild
+                                l.getFileController().saveGuild(ev.getGuild());
+                            }));
+        }
+    }
+
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         // Gather the name of the channel from the remaining input
         String channelName = Utils.drainQueueToString(input);
 
@@ -40,18 +62,8 @@ public class TemporaryChannelCommand extends Command {
                 parent = null;
             }
 
-            // No parent was found so a new category will be created
-            if (parent == null) {
-                parent = l.getChannelController().createTempCategory(ev.getGuild(), channelName);
-            }
-
             // Create the temporary channels
-            VoiceChannel vc = l.getChannelController().createTempVoiceChannel(ev, channelName, parent);
-            TextChannel tc = l.getChannelController().createTempTextChannel(ev, channelName, parent);
-
-            // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
-            l.getChannelController().getLinkedChannels().put(vc, tc);
-            l.getChannelController().setNewChannelTimeout(vc);
+            createTemporaryChannels(channelName, parent);
 
             // Send feedback to the user
             l.getDiscordController().sendMessage(ev,
@@ -60,8 +72,7 @@ public class TemporaryChannelCommand extends Command {
                             ev.getMember().getAsMention(), channelName),
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL
             );
-            Logger.log("Created group " + vc.getName() + "!");
-            l.getFileController().saveGuild(ev.getGuild());
+            Logger.log("Created group " + channelName + "!");
         } else {
             // If no channel is available, send feedback to the user
             if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0) {

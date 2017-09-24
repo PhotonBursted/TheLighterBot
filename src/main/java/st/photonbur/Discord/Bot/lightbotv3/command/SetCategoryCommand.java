@@ -2,7 +2,6 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -19,7 +18,7 @@ public class SetCategoryCommand extends Command implements Selector {
     private String search;
 
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         if (input.size() >= 1) {
             search = Utils.drainQueueToString(input);
 

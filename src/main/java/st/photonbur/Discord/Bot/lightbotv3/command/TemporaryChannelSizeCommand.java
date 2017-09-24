@@ -4,14 +4,13 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 public class TemporaryChannelSizeCommand extends Command {@Override
-    public void execute() throws RateLimitedException {
+    public void execute() {
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
         TextChannel tc = l.getChannelController().getLinkedChannels().get(vc);

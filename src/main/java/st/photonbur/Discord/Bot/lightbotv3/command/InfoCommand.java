@@ -3,7 +3,6 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
@@ -11,7 +10,7 @@ import java.awt.*;
 
 public class InfoCommand extends Command {
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         EmbedBuilder eb = new EmbedBuilder();
         eb.addField("General information",
                 "Name: `TheLighterBot`\n" +
@@ -22,7 +21,7 @@ public class InfoCommand extends Command {
                 "Invite: `http://photonbur.st/auth/discord/thelighterbot`\n" +
                 "Discord server: `https://discord.gg/sU4pzV4`", false)
         .addField("Bot-specific information",
-                "Version: `3.0.1`\n" +
+                "Version: `3.0.2`\n" +
                 "Library: `JDA v" + JDAInfo.VERSION + "`\n" +
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 

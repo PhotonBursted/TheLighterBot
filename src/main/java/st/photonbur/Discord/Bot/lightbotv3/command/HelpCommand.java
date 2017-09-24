@@ -3,7 +3,6 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.MessageEmbed;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.Paginator;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorBuilder;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class HelpCommand extends Command implements Paginator<MessageEmbed> {
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         LinkedList<String> commandTextList = new LinkedList<>();
 
         l.getCommandParser().getCommands().stream()

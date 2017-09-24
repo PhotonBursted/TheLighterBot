@@ -3,7 +3,6 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -48,27 +47,23 @@ public abstract class Command {
     /**
      * Method to be implemented with the behaviour and actions the command should have.
      */
-    abstract void execute() throws RateLimitedException;
+    abstract void execute();
 
     /**
      * Called by the {@link CommandParser} to execute the command.
      * This method will also carry out last preparations before actually executing the command.
      */
     void executeCmd() {
-        try {
-            this.ev = CommandParser.getLastEvent();
+        this.ev = CommandParser.getLastEvent();
 
-            if (!l.getBlacklistController().isBlacklisted(ev.getMember())) {
-                if (canBeExecutedBy(ev.getMember())) {
-                    execute();
-                } else {
-                    handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
-                }
+        if (!l.getBlacklistController().isBlacklisted(ev.getMember())) {
+            if (canBeExecutedBy(ev.getMember())) {
+                execute();
             } else {
-                handleError(MessageContent.BLACKLISTED);
+                handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
             }
-        } catch (RateLimitedException ex) {
-            ex.printStackTrace();
+        } else {
+            handleError(MessageContent.BLACKLISTED);
         }
     }
 

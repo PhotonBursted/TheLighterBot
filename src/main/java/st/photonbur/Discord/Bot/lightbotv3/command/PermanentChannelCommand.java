@@ -2,14 +2,13 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.VoiceChannel;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 public class PermanentChannelCommand extends Command {
     @Override
-    void execute() throws RateLimitedException {
+    void execute() {
         if (ev.getMember().getVoiceState().inVoiceChannel()) {
             VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
 
