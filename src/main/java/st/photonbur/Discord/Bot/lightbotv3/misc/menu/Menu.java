@@ -3,6 +3,7 @@ package st.photonbur.Discord.Bot.lightbotv3.misc.menu;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.message.guild.react.GuildMessageReactionAddEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.core.requests.RestAction;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
@@ -57,15 +58,11 @@ public abstract class Menu extends ListenerAdapter {
      * Adds one control to the message.
      * This is done recursively as to maintain the order of the controls.
      *
-     * @param i The index of the control to add
+     * @param controlToAdd The control to add to the messsage
      */
-    private void addControl(int i) {
-        if (i >= controls.length) {
-            refreshTimeout();
-            return;
-        }
+    private RestAction<Void> addControl(Control controlToAdd) {
 
-        message.addReaction(controls[i].getUnicode()).queue((success) -> addControl(i + 1));
+        return message.addReaction(controlToAdd.getUnicode());
     }
 
     /**
@@ -73,7 +70,15 @@ public abstract class Menu extends ListenerAdapter {
      * It does so recursively as to maintain the order of the controls.
      */
     private void addControls() {
-        addControl(0);
+        RestAction<Void> reactionAction = null;
+
+        for (Control control : controls) {
+            reactionAction = addControl(control);
+        }
+
+        if (reactionAction != null) {
+            reactionAction.queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
+        }
     }
 
     /**
@@ -87,7 +92,7 @@ public abstract class Menu extends ListenerAdapter {
         // Prevent any clicks from activating the menu again
         l.getBot().removeEventListener(this);
         // Delete the message
-        message.delete().queue();
+        message.delete().queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
     }
 
     /**
@@ -108,7 +113,7 @@ public abstract class Menu extends ListenerAdapter {
 
         // Remove the reaction which was added in this event.
         // Do this with a slight delay to prevent graphical glitches client side.
-        ev.getReaction().removeReaction(ev.getUser()).queueAfter(50, TimeUnit.MILLISECONDS);
+        ev.getReaction().removeReaction(ev.getUser()).queueAfter(50, TimeUnit.MILLISECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
 
         // If the one adding a reaction wasn't the command issuer, don't do anything
         if (!ev.getUser().equals(CommandParser.getLastEvent().getAuthor())) return;

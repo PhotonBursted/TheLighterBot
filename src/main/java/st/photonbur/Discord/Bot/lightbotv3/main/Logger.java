@@ -5,6 +5,7 @@ import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputReader;
 
 import java.io.*;
@@ -138,7 +139,7 @@ public class Logger extends ListenerAdapter {
                     ev.getAuthor().getName(), ev.getAuthor().getDiscriminator(), ev.getAuthor().getId(),
                     ev.getChannel().getName()));
             // Delete the message
-            ev.getMessage().delete().complete();
+            ev.getMessage().delete().queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
             // Mark the event as last handled
             lastDeletedMessageId = ev.getMessageId();
         } else {

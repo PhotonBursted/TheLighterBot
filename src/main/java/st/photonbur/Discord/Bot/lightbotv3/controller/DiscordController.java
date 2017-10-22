@@ -18,12 +18,16 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
  * This class is in charge of everything related to interaction with Discord.
  */
 public class DiscordController {
+    public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) ->
+            message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage()).queue();
+
     /**
      * The prefix to look for when receiving messages
      */
@@ -114,7 +118,7 @@ public class DiscordController {
                 .build()
         ).queue((message) -> {
             if (secondsBeforeDeletion > 0) {
-                message.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS);
+                message.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
             }
         });
     }
@@ -153,7 +157,7 @@ public class DiscordController {
             }
 
             if (secondsBeforeDeletion > 0) {
-                msg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS);
+                msg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, msg));
             }
         });
     }

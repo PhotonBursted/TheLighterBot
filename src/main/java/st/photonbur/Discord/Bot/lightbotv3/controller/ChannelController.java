@@ -1,6 +1,6 @@
 package st.photonbur.Discord.Bot.lightbotv3.controller;
 
-import com.sun.istack.internal.Nullable;
+import javax.annotation.Nullable;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;

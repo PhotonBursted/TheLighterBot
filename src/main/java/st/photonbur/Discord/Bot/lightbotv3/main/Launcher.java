@@ -19,6 +19,8 @@ import java.util.Scanner;
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
 public class Launcher implements ConsoleInputListener {
+    public static final String VERSION = "3.0.10";
+
     private static Launcher instance;
     private Properties props = new Properties();
     private Scanner sc;
@@ -74,6 +76,7 @@ public class Launcher implements ConsoleInputListener {
     }
 
     public static void main(String[] args) {
+        Logger.log("Launching v" + Launcher.VERSION);
         Launcher.getInstance().run();
     }
 
@@ -138,6 +141,7 @@ public class Launcher implements ConsoleInputListener {
     private void shutdown() {
         Logger.log("Shutting down...");
 
+        sc.close();
         getLogger().shutdown();
         getBot().shutdown();
 

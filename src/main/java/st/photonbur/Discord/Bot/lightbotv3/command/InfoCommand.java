@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import java.awt.*;
@@ -21,7 +22,7 @@ public class InfoCommand extends Command {
                 "Invite: `http://photonbur.st/auth/discord/thelighterbot`\n" +
                 "Discord server: `https://discord.gg/sU4pzV4`", false)
         .addField("Bot-specific information",
-                "Version: `3.0.2`\n" +
+                "Version: `" + Launcher.VERSION + "`\n" +
                 "Library: `JDA v" + JDAInfo.VERSION + "`\n" +
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 

@@ -2,7 +2,6 @@ package st.photonbur.Discord.Bot.lightbotv3.controller;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
@@ -54,6 +53,20 @@ public class BlacklistController {
     }
 
     /**
+     * Controls getting a dynamic instance from this class.
+     * Part of the Singleton design pattern.
+     *
+     * @return The only present instance of this class.
+     */
+    public static synchronized BlacklistController getInstance() {
+        if (instance == null) {
+            instance = new BlacklistController();
+        }
+
+        return instance;
+    }
+
+    /**
      * Blacklists a {@link User user} or {@link Role role} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to
@@ -93,20 +106,6 @@ public class BlacklistController {
 
     Set<? extends ISnowflake> getForGuild(Guild g) {
         return blacklist.get(g);
-    }
-
-    /**
-     * Controls getting a dynamic instance from this class.
-     * Part of the Singleton design pattern.
-     *
-     * @return The only present instance of this class.
-     */
-    public static synchronized BlacklistController getInstance() {
-        if (instance == null) {
-            instance = new BlacklistController();
-        }
-
-        return instance;
     }
 
     /**

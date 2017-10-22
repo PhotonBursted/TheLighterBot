@@ -2,6 +2,7 @@ package st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator;
 
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageEmbed;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Control;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Menu;
 
@@ -69,11 +70,11 @@ public class PaginatorImpl extends Menu {
 
         // Try to edit the message if it is of the right type
         if (content instanceof String) {
-            message.editMessage(((String) content)).queue();
+            message.editMessage(((String) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
         } else if (content instanceof Message) {
-            message.editMessage(((Message) content)).queue();
+            message.editMessage(((Message) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
         } else if (content instanceof MessageEmbed) {
-            message.editMessage(((MessageEmbed) content)).queue();
+            message.editMessage(((MessageEmbed) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
         }
     }
 }

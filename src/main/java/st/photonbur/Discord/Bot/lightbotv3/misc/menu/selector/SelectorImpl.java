@@ -1,6 +1,7 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector;
 
 import net.dv8tion.jda.core.entities.Message;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Control;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Menu;
 
@@ -81,6 +82,6 @@ public class SelectorImpl<T> extends Menu {
         }
         sb.append("\n\nUse the controls below to select an option.");
 
-        message.editMessage(sb.toString()).queue();
+        message.editMessage(sb.toString()).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
     }
 }
