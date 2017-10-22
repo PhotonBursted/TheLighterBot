@@ -58,11 +58,15 @@ public abstract class Menu extends ListenerAdapter {
      * Adds one control to the message.
      * This is done recursively as to maintain the order of the controls.
      *
-     * @param controlToAdd The control to add to the messsage
+     * @param i The index of the control to add
      */
-    private RestAction<Void> addControl(Control controlToAdd) {
+    private void addControl(int i) {
+        if (i >= controls.length) {
+            refreshTimeout();
+            return;
+        }
 
-        return message.addReaction(controlToAdd.getUnicode());
+        message.addReaction(controls[i].getUnicode()).queue((success) -> addControl(i + 1), (error) -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
     }
 
     /**
@@ -70,15 +74,7 @@ public abstract class Menu extends ListenerAdapter {
      * It does so recursively as to maintain the order of the controls.
      */
     private void addControls() {
-        RestAction<Void> reactionAction = null;
-
-        for (Control control : controls) {
-            reactionAction = addControl(control);
-        }
-
-        if (reactionAction != null) {
-            reactionAction.queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
-        }
+        addControl(0);
     }
 
     /**

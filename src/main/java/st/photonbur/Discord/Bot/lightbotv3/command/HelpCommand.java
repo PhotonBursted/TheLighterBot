@@ -33,11 +33,11 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
             commandTextList.add(sb);
         });
 
-        Logger.logAndDelete("Begged for help!");
-        new PaginatorBuilder<>(this)
-                .setContent(commandTextList)
-                .setPlaceholderMessage("Requesting help...")
-                .build();
+        Logger.logAndDelete("Begged for help!", (success) ->
+                new PaginatorBuilder<>(this)
+                        .setContent(commandTextList)
+                        .setPlaceholderMessage("Requesting help...")
+                        .build());
     }
 
     @Override

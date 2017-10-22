@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.function.Consumer;
 
 /**
  * Custom Logger implementation for use throughout the project
@@ -126,6 +127,19 @@ public class Logger extends ListenerAdapter {
      * @see CommandParser#getLastEvent
      */
     public static void logAndDelete(String msg) {
+        logAndDelete(msg, null);
+    }
+
+    /**
+     * Besides logging, this method will also grab Discord's received message events as parsed by the {@link st.photonbur.Discord.Bot.lightbotv3.command.CommandParser CommandParser}.
+     * If viable, it will delete the message and put the author and source of the sent message in the log.
+     *
+     * @param msg              The string to log
+     * @param successOperation The action to execute if the message deletes appropriately
+     * @see GuildMessageReceivedEvent
+     * @see CommandParser#getLastEvent
+     */
+    public static void logAndDelete(String msg, Consumer<Void> successOperation) {
         // Get the last event parsed by the command parser
         GuildMessageReceivedEvent ev = CommandParser.getLastEvent();
 
@@ -139,7 +153,7 @@ public class Logger extends ListenerAdapter {
                     ev.getAuthor().getName(), ev.getAuthor().getDiscriminator(), ev.getAuthor().getId(),
                     ev.getChannel().getName()));
             // Delete the message
-            ev.getMessage().delete().queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
+            ev.getMessage().delete().queue(successOperation, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
             // Mark the event as last handled
             lastDeletedMessageId = ev.getMessageId();
         } else {

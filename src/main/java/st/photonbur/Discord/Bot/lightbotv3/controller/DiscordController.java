@@ -25,8 +25,13 @@ import java.util.function.Consumer;
  * This class is in charge of everything related to interaction with Discord.
  */
 public class DiscordController {
-    public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) ->
-            message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage()).queue();
+    public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) -> {
+        throwable.printStackTrace();
+
+        if (!message.getRawContent().toUpperCase().contains("UNKNOWN MESSAGE")) {
+            message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage() + "\nContent: " + message.getRawContent()).queue();
+        }
+    };
 
     /**
      * The prefix to look for when receiving messages
