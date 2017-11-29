@@ -3,6 +3,7 @@ package st.photonbur.Discord.Bot.lightbotv3.main;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
@@ -152,8 +153,15 @@ public class Logger extends ListenerAdapter {
                     msg,
                     ev.getAuthor().getName(), ev.getAuthor().getDiscriminator(), ev.getAuthor().getId(),
                     ev.getChannel().getName()));
-            // Delete the message
-            ev.getMessage().delete().queue(successOperation, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
+
+            try {
+                // Delete the message
+                ev.getMessage().delete().queue(successOperation, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
+            } catch (InsufficientPermissionException ex) {
+                ex.printStackTrace();
+                ev.getMessage().getChannel().sendMessage(ex.getMessage()).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
+            }
+
             // Mark the event as last handled
             lastDeletedMessageId = ev.getMessageId();
         } else {

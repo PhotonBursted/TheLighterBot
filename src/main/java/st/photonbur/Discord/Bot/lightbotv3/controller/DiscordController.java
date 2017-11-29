@@ -26,9 +26,9 @@ import java.util.function.Consumer;
  */
 public class DiscordController {
     public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) -> {
-        throwable.printStackTrace();
+        if (!throwable.getMessage().toUpperCase().contains("UNKNOWN MESSAGE")) {
+            throwable.printStackTrace();
 
-        if (!message.getRawContent().toUpperCase().contains("UNKNOWN MESSAGE")) {
             message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage() + "\nContent: " + message.getRawContent()).queue();
         }
     };
