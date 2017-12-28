@@ -29,7 +29,7 @@ public class DiscordController {
         if (!throwable.getMessage().toUpperCase().contains("UNKNOWN MESSAGE")) {
             throwable.printStackTrace();
 
-            message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage() + "\nContent: " + message.getRawContent()).queue();
+            message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage() + "\nContent: " + message.getContentRaw()).queue();
         }
     };
 
@@ -118,7 +118,7 @@ public class DiscordController {
     public void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype, long secondsBeforeDeletion) {
         e.getMessage().getChannel().sendMessage(embedPrototype
                 .setColor(color)
-                .setFooter("Result of " + e.getMessage().getRawContent(), null)
+                .setFooter("Result of " + e.getMessage().getContentRaw(), null)
                 .setTimestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Amsterdam")).withZoneSameInstant(ZoneOffset.UTC))
                 .build()
         ).queue((message) -> {

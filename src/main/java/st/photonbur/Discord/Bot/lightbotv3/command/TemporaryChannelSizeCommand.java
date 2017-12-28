@@ -9,7 +9,8 @@ import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-public class TemporaryChannelSizeCommand extends Command {@Override
+public class TemporaryChannelSizeCommand extends Command {
+    @Override
     public void execute() {
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
@@ -125,7 +126,7 @@ public class TemporaryChannelSizeCommand extends Command {@Override
 
     @Override
     public String getUsage() {
-        return "{}tempchan -size <channelSize>\n" +
+        return "{}tempchan -s <channelSize>\n" +
                 "    <channelSize> specifies the new size of the voice channel.\n" +
                 "    - <channelSize> has to have an integer value between 0 and 99.\n" +
                 "        A value of 0 will remove the limit, as does the keyword \"remove\"";

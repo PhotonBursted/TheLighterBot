@@ -116,7 +116,7 @@ public abstract class Menu extends ListenerAdapter {
 
         // Figure out which control was clicked
         Control selectedOption = Arrays.stream(controls)
-                .filter(c -> c.getUnicode().equals(ev.getReaction().getEmote().getName()))
+                .filter(c -> c.getUnicode().equals(ev.getReactionEmote().getName()))
                 .findFirst().orElse(null);
 
         // If any control was detected, do things appropriately

@@ -1,7 +1,9 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
+import com.sun.istack.internal.logging.Logger;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +79,7 @@ public class CommandParser extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent ev) {
         // Get the raw message. This includes all markup as well.
-        String msg = ev.getMessage().getRawContent();
+        String msg = ev.getMessage().getContentRaw();
 
         // Create a queue of the input. Every space separated piece of the string is a new element
         LinkedBlockingQueue<String> input = new LinkedBlockingQueue<>(Arrays.asList(msg.split(SEP_SPACE)));
