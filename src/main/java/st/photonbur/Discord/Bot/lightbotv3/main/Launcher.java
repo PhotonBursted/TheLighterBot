@@ -19,7 +19,7 @@ import java.util.Scanner;
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
 public class Launcher implements ConsoleInputListener {
-    public static final String VERSION = "3.1.0";
+    public static final String VERSION = "3.1.1";
 
     private static Launcher instance;
     private Properties props = new Properties();

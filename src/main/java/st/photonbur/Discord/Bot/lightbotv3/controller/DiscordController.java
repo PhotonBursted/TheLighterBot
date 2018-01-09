@@ -182,7 +182,7 @@ public class DiscordController {
                     .addEventListener(l.getCommandParser(), l.getChannelController(), l.getLogger())
                     .buildBlocking();
 
-        } catch (LoginException | InterruptedException | RateLimitedException ex) {
+        } catch (LoginException | InterruptedException ex) {
             ex.printStackTrace();
         }
     }
