@@ -1,5 +1,6 @@
 package st.photonbur.Discord.Bot.lightbotv3.main;
 
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.events.ExceptionEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
@@ -154,12 +155,11 @@ public class Logger extends ListenerAdapter {
                     ev.getAuthor().getName(), ev.getAuthor().getDiscriminator(), ev.getAuthor().getId(),
                     ev.getChannel().getName()));
 
-            try {
-                // Delete the message
-                ev.getMessage().delete().queue(successOperation, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
-            } catch (InsufficientPermissionException ex) {
-                ex.printStackTrace();
-                ev.getMessage().getChannel().sendMessage(ex.getMessage()).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, ev.getMessage()));
+            // Delete the message if permissions allow it
+            if (ev.getGuild().getSelfMember().hasPermission(ev.getChannel(), Permission.MESSAGE_MANAGE)) {
+                ev.getMessage().delete().queue(successOperation);
+            } else {
+                successOperation.accept(null);
             }
 
             // Mark the event as last handled
@@ -199,7 +199,7 @@ public class Logger extends ListenerAdapter {
             // This to allow for exporting all of standard in- and out to the log file.
             out = new PrintStream(new BufferedOutputStream(new OutputStream() {
                 @Override
-                public void write(int b) throws IOException {
+                public void write(int b) {
                     fOut.write(b);
                     stdOut.write(b);
                 }
@@ -208,7 +208,7 @@ public class Logger extends ListenerAdapter {
 
             err = new PrintStream(new BufferedOutputStream(new OutputStream() {
                 @Override
-                public void write(int b) throws IOException {
+                public void write(int b) {
                     fOut.write(b);
                     stdErr.write(b);
                 }

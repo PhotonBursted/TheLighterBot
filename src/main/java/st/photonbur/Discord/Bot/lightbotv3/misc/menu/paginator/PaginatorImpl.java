@@ -1,5 +1,6 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator;
 
+import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageEmbed;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
@@ -30,7 +31,19 @@ public class PaginatorImpl extends Menu {
         this.currPage = 0;
         this.parent = parent;
 
-        renderPage(currPage);
+        if (message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+            renderPage(currPage);
+        } else {
+            DiscordController.getInstance().sendMessage(message.getChannel(),
+                    "Since no " + Permission.MESSAGE_MANAGE.name() +
+                    " permissions have been granted, the menu is displayed flattened," +
+                    " and will delete in " + DiscordController.AUTOMATIC_REMOVAL_INTERVAL + " seconds.",
+                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+
+            for (int page = 0; page < this.content.size(); page++) {
+                renderPage(page, false);
+            }
+        }
     }
 
     @Override
@@ -65,16 +78,30 @@ public class PaginatorImpl extends Menu {
      * @param page The page to render
      */
     private void renderPage(int page) {
+        renderPage(page, true);
+    }
+
+    private void renderPage(int page, boolean doEdit) {
         // Get the content supplied by the parent caller
         Object content = parent.constructMessage(this.content.get(page).split(ITEM_SEPARATOR), page + 1, this.content.size());
 
-        // Try to edit the message if it is of the right type
-        if (content instanceof String) {
-            message.editMessage(((String) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
-        } else if (content instanceof Message) {
-            message.editMessage(((Message) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
-        } else if (content instanceof MessageEmbed) {
-            message.editMessage(((MessageEmbed) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
+        if (doEdit) {
+            // Try to edit the message if it is of the right type
+            if (content instanceof String) {
+                message.editMessage(((String) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
+            } else if (content instanceof Message) {
+                message.editMessage(((Message) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
+            } else if (content instanceof MessageEmbed) {
+                message.editMessage(((MessageEmbed) content)).queue(null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
+            }
+        } else {
+            if (content instanceof String) {
+                DiscordController.getInstance().sendMessage(message.getChannel(), (String) content, DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+            } else if (content instanceof Message) {
+                DiscordController.getInstance().sendMessage(message.getChannel(), (Message) content, DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+            } else if (content instanceof MessageEmbed) {
+                DiscordController.getInstance().sendMessage(message.getChannel(), (MessageEmbed) content, DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+            }
         }
     }
 }

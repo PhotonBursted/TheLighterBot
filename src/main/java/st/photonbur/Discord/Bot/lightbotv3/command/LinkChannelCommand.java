@@ -23,7 +23,7 @@ public class LinkChannelCommand extends Command {
                         " - TC: %s (%s)",
                         vc.getName(), vc.getId(),
                         tc.getName(), tc.getId()));
-                l.getDiscordController().sendMessage(ev,
+                l.getDiscordController().sendMessage(tc,
                         String.format("Successfully linked **%s** to **%s**!", vc.getName(), tc.getAsMention()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 l.getFileController().saveGuild(ev.getGuild());

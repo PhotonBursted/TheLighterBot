@@ -116,9 +116,9 @@ public abstract class Command {
      */
     void handleError(String msg) {
         // Send a message indicating the error
-        l.getDiscordController().sendMessage(CommandParser.getLastEvent(), msg, 10);
+        l.getDiscordController().sendMessage(ev, msg, 10);
         // Delete both messages after 10 seconds
-        CommandParser.getLastEvent().getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
+        ev.getMessage().delete().queueAfter(10, TimeUnit.SECONDS);
     }
 
     /**

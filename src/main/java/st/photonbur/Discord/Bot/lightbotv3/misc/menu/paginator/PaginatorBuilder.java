@@ -1,11 +1,15 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator;
 
+import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Message;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Control;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.MenuBuilder;
 
 import java.util.LinkedList;
+import java.util.function.Consumer;
 
 /**
  * Builder specifically for building Paginator type menus.
@@ -21,17 +25,27 @@ public class PaginatorBuilder<T> extends MenuBuilder<Paginator<T>> {
     public PaginatorBuilder(Paginator<T> parent) {
         super(parent);
 
-        // Sets the controls this menu needs
-        setControls(Control.PREV, Control.STOP, Control.NEXT);
-        // Sets a default message for when this menu is loading
-        setPlaceholderMessage("Building paginator...");
+        if (CommandParser.getLastEvent().getGuild().getSelfMember().hasPermission(CommandParser.getLastEvent().getChannel(), Permission.MESSAGE_MANAGE)) {
+            // Sets the controls this menu needs
+            setControls(Control.PREV, Control.STOP, Control.NEXT);
+            // Sets a default message for when this menu is loading
+            setPlaceholderMessage("Building paginator...");
+        } else {
+            setControls();
+            setPlaceholderMessage(PLACEHOLDER_DISABLED_STRING);
+        }
     }
 
     @Override
-    public void build() {
-        // First sends a message, then uses that to hook the menu onto
-        Launcher.getInstance().getDiscordController().sendMessage(CommandParser.getLastEvent(), placeholderMessage,
-                (message -> new PaginatorImpl(controls, content, parent, message)));
+    public void buildImpl() {
+        Consumer<Message> createAction = message -> new PaginatorImpl(controls, content, parent, message);
+
+        if (placeholderMessage != null) {
+            // First sends a message, then uses that to hook the menu onto
+            DiscordController.getInstance().sendMessage(CommandParser.getLastEvent(), placeholderMessage, createAction);
+        } else {
+            createAction.accept(CommandParser.getLastEvent().getMessage());
+        }
     }
 
     /**

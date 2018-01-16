@@ -8,6 +8,8 @@ package st.photonbur.Discord.Bot.lightbotv3.misc.menu;
  */
 @SuppressWarnings("UnusedReturnValue")
 public abstract class MenuBuilder<T> {
+    protected static final String PLACEHOLDER_DISABLED_STRING = ">?DISABLED?<";
+
     /**
      * The message to display while the menu is loading
      */
@@ -29,9 +31,20 @@ public abstract class MenuBuilder<T> {
 
     /**
      * Builds the menu.
+     */
+    public void build() {
+        if (placeholderMessage.equals(PLACEHOLDER_DISABLED_STRING)) {
+            placeholderMessage = null;
+        }
+
+        buildImpl();
+    }
+
+    /**
+     * Builds the menu.
      * Abstract since every implementation will a different constructor and different needs.
      */
-    public abstract void build();
+    protected abstract void buildImpl();
 
     /**
      * Sets the controls used to interact with the menu.
@@ -51,7 +64,9 @@ public abstract class MenuBuilder<T> {
      * @return This instance of the builder
      */
     public MenuBuilder setPlaceholderMessage(String placeholderMessage) {
-        this.placeholderMessage = placeholderMessage;
+        if (!placeholderMessage.equals(PLACEHOLDER_DISABLED_STRING)) {
+            this.placeholderMessage = placeholderMessage;
+        }
         return this;
     }
 

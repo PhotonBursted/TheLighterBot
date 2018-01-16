@@ -16,7 +16,7 @@ public class PermanentChannelCommand extends Command {
                 l.getChannelController().getPermChannels().put(vc, ev.getChannel());
 
                 Logger.logAndDelete(String.format("%s has been made permanent.", vc.getName()));
-                l.getDiscordController().sendMessage(ev,
+                l.getDiscordController().sendMessage(ev.getChannel(),
                         String.format("Successfully made **%s** permanent!", vc.getName()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 l.getFileController().saveGuild(ev.getGuild());

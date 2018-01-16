@@ -31,7 +31,7 @@ public class SelectorBuilder<T> extends MenuBuilder<Selector> {
     }
 
     @Override
-    public void build() {
+    public void buildImpl() {
         // First, send a message.
         // As a callback, use the newly generated message to hook the new menu onto
         Launcher.getInstance().getDiscordController().sendMessage(CommandParser.getLastEvent(), placeholderMessage,

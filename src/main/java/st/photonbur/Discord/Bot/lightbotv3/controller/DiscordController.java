@@ -5,8 +5,9 @@ import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.Message;
+import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
@@ -24,6 +25,7 @@ import java.util.function.Consumer;
 /**
  * This class is in charge of everything related to interaction with Discord.
  */
+@SuppressWarnings("SameParameterValue")
 public class DiscordController {
     public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) -> {
         if (!throwable.getMessage().toUpperCase().contains("UNKNOWN MESSAGE")) {
@@ -108,24 +110,79 @@ public class DiscordController {
     }
 
     /**
+     * Handles a default message sending situation.
+     * This method is supposed to be used whenever a message is succesfully sent to Discord.
+     *
+     * @param callback              The action to take when the message has been sent
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param sentMsg               The sent message object with which to resolve the callback.
+     */
+    private void handleCallbackAndDeletion(Consumer<Message> callback, long secondsBeforeDeletion, Message sentMsg) {
+        if (callback != null) {
+            callback.accept(sentMsg);
+        }
+
+        if (secondsBeforeDeletion > 0) {
+            sentMsg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, sentMsg));
+        }
+    }
+
+    /**
      * Sends a message to Discord in the form of an embed.
      * @param e              The event to respond to
      * @param color          The color to give to the embed
-     * @param embedPrototype The rest of the embed in the form of a builder
+     * @param embedPrototype The contents of the embed in the form of a builder
      *
      * @see EmbedBuilder
      */
     public void sendMessage(GuildMessageReceivedEvent e, Color color, EmbedBuilder embedPrototype, long secondsBeforeDeletion) {
-        e.getMessage().getChannel().sendMessage(embedPrototype
+        sendMessage(e, embedPrototype
                 .setColor(color)
                 .setFooter("Result of " + e.getMessage().getContentRaw(), null)
                 .setTimestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Amsterdam")).withZoneSameInstant(ZoneOffset.UTC))
-                .build()
-        ).queue((message) -> {
-            if (secondsBeforeDeletion > 0) {
-                message.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, message));
-            }
-        });
+                .build(), secondsBeforeDeletion);
+    }
+
+    /**
+     * Sends a message to Discord in the form of an embed.
+     * @param e                     The event to respond to
+     * @param msg                   The embed to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     */
+    private void sendMessage(GuildMessageReceivedEvent e, MessageEmbed msg, long secondsBeforeDeletion) {
+        sendMessage(e, msg, secondsBeforeDeletion, null);
+    }
+
+    /**
+     * Sends a message to Discord in the form of an embed.
+     * @param e                     The event to respond to
+     * @param msg                   The embed to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param callback              The action to take when the message has been sent
+     */
+    private void sendMessage(GuildMessageReceivedEvent e, MessageEmbed msg, long secondsBeforeDeletion, Consumer<Message> callback) {
+        sendMessage(e.getChannel(), msg, secondsBeforeDeletion, callback);
+    }
+
+    /**
+     * Sends a message to Discord in the form of an embed.
+     * @param c                     The channel to send the message into
+     * @param msg                   The embed to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     */
+    public void sendMessage(MessageChannel c, MessageEmbed msg, long secondsBeforeDeletion) {
+        sendMessage(c, msg, secondsBeforeDeletion, null);
+    }
+
+    /**
+     * Sends a message to Discord in the form of an embed.
+     * @param c                     The channel to send the message into
+     * @param msg                   The embed to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param callback              The action to take when the message has been sent
+     */
+    private void sendMessage(MessageChannel c, MessageEmbed msg, long secondsBeforeDeletion, Consumer<Message> callback) {
+        c.sendMessage(msg).queue(sentMsg -> handleCallbackAndDeletion(callback, secondsBeforeDeletion, sentMsg));
     }
 
     /**
@@ -156,15 +213,49 @@ public class DiscordController {
      * @param callback              The action to take when the message has been sent
      */
     private void sendMessage(GuildMessageReceivedEvent e, String s, long secondsBeforeDeletion, Consumer<Message> callback) {
-        e.getChannel().sendMessage(s).queue((msg) -> {
-            if (callback != null) {
-                callback.accept(msg);
-            }
+        sendMessage(e.getChannel(), s, secondsBeforeDeletion, callback);
+    }
 
-            if (secondsBeforeDeletion > 0) {
-                msg.delete().queueAfter(secondsBeforeDeletion, TimeUnit.SECONDS, null, error -> DiscordController.MESSAGE_ACTION_FAIL.accept(error, msg));
-            }
-        });
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param c                     The channel to send the message into
+     * @param s                     The string to display within the message
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     */
+    public void sendMessage(MessageChannel c, String s, long secondsBeforeDeletion) {
+        sendMessage(c, s, secondsBeforeDeletion, null);
+    }
+
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param c                     The channel to send the message into
+     * @param s                     The string to display within the message
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param callback              The action to take when the message has been sent
+     */
+    private void sendMessage(MessageChannel c, String s, long secondsBeforeDeletion, Consumer<Message> callback) {
+        c.sendMessage(s).queue(sentMsg -> handleCallbackAndDeletion(callback, secondsBeforeDeletion, sentMsg));
+    }
+
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param c                     The channel to send the message into
+     * @param msg                   The message to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     */
+    public void sendMessage(MessageChannel c, Message msg, long secondsBeforeDeletion) {
+        sendMessage(c, msg, secondsBeforeDeletion, null);
+    }
+
+    /**
+     * Sends a message to Discord in the form of a normal text message.
+     * @param c                     The channel to send the message into
+     * @param msg                   The message to send
+     * @param secondsBeforeDeletion The amount of seconds before the message should be deleted automatically
+     * @param callback              The action to take when the message has been sent
+     */
+    private void sendMessage(MessageChannel c, Message msg, long secondsBeforeDeletion, Consumer<Message> callback) {
+        c.sendMessage(msg).queue(sentMsg -> handleCallbackAndDeletion(callback, secondsBeforeDeletion, sentMsg));
     }
 
     /**
