@@ -13,7 +13,7 @@ public class PermanentChannelCommand extends Command {
             VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
 
             if (!l.getChannelController().isPermanent(vc)) {
-                l.getChannelController().getPermChannels().put(vc, ev.getChannel());
+                l.getChannelController().getPermChannels().put(ev.getChannel(), vc);
 
                 Logger.logAndDelete(String.format("%s has been made permanent.", vc.getName()));
                 l.getDiscordController().sendMessage(ev.getChannel(),

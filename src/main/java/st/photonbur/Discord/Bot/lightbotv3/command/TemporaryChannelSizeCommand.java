@@ -14,7 +14,7 @@ public class TemporaryChannelSizeCommand extends Command {
     public void execute() {
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
-        TextChannel tc = l.getChannelController().getLinkedChannels().get(vc);
+        TextChannel tc = l.getChannelController().getLinkedChannels().getForVoiceChannel(vc);
 
         // If the voice channel wasn't found the user wasn't in one to start with
         if (vc != null) {

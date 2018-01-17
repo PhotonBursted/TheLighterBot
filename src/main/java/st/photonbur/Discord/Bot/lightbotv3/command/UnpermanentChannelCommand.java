@@ -13,7 +13,7 @@ public class UnpermanentChannelCommand extends Command {
             VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
 
             if (l.getChannelController().isPermanent(vc)) {
-                l.getChannelController().getPermChannels().remove(vc, ev.getChannel());
+                l.getChannelController().getPermChannels().remove(vc);
 
                 Logger.logAndDelete(String.format("%s has been made temporary.", vc.getName()));
                 l.getDiscordController().sendMessage(ev,

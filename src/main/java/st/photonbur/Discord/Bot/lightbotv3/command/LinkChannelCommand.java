@@ -15,8 +15,8 @@ public class LinkChannelCommand extends Command {
 
             if (!l.getChannelController().isLinked(vc)) {
                 TextChannel tc = ev.getChannel();
-                l.getChannelController().getLinkedChannels().put(vc, tc);
-                l.getChannelController().getPermChannels().put(vc, tc);
+                l.getChannelController().getLinkedChannels().put(tc, vc);
+                l.getChannelController().getPermChannels().put(tc, vc);
 
                 Logger.logAndDelete(String.format("A new link has been established:\n" +
                         " - VC: %s (%s)\n" +

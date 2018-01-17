@@ -1,9 +1,7 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
-import com.sun.istack.internal.logging.Logger;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;

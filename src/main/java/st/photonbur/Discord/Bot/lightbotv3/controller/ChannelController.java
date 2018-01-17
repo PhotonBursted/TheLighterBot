@@ -13,6 +13,7 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.misc.ChannelMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.*;
@@ -41,11 +42,11 @@ public class ChannelController extends ListenerAdapter {
      * Keeps track of channels which are linked to each other.
      * This "linkage" is referring to the displaying of join, leave and move actions in the text channel.
      */
-    private final HashMap<VoiceChannel, TextChannel> linkedChannels;
+    private final ChannelMap linkedChannels;
     /**
      * Keeps track of pairs of channels which should not be removed when empty.
      */
-    private final HashMap<VoiceChannel, TextChannel> permChannels;
+    private final ChannelMap permChannels;
 
     /**
      * Instance of the launcher for easy access to other classes
@@ -58,8 +59,8 @@ public class ChannelController extends ListenerAdapter {
         this.l = l;
 
         categories = new HashMap<>();
-        linkedChannels = new HashMap<>();
-        permChannels = new HashMap<>();
+        linkedChannels = new ChannelMap("linked");
+        permChannels = new ChannelMap("permanent");
         timeoutCandidates = new HashMap<>();
     }
 
@@ -200,8 +201,10 @@ public class ChannelController extends ListenerAdapter {
      * @param c The channel to remove
      * @return The success of the operation
      */
-    private static boolean deleteLinkedChannel(Channel c) {
-        if (c != null) {
+    private boolean deleteLinkedChannel(Channel c) {
+        if (c instanceof TextChannel && linkedChannels.get(c).size() > 1) {
+            return true;
+        } else if (c != null) {
             c.delete().reason("This temporary channel had no people left in it").queue();
 
             return true;
@@ -223,8 +226,7 @@ public class ChannelController extends ListenerAdapter {
         }
 
         // Try to remove all channels involved
-        boolean cleaned = deleteLinkedChannel(vc) &&
-                deleteLinkedChannel(linkedChannels.get(vc)) &&
+        boolean cleaned = deleteLinkedChannel(vc) && deleteLinkedChannel(linkedChannels.getForVoiceChannel(vc)) &&
                 ((categories.containsKey(vc.getGuild()) && categories.get(vc.getGuild()) != null) || deleteLinkedChannel(vc.getParent()));
 
         // Log feedback
@@ -254,12 +256,12 @@ public class ChannelController extends ListenerAdapter {
     /**
      * @return The pairs of channels linked to each other.
      */
-    public HashMap<VoiceChannel, TextChannel> getLinkedChannels() {
+    public ChannelMap getLinkedChannels() {
         return linkedChannels;
     }
 
     @SuppressWarnings("unchecked")
-    WeakHashMap<VoiceChannel, TextChannel> getLinkedChannelsForGuild(Guild g) {
+    WeakHashMap<TextChannel, Set<VoiceChannel>> getLinkedChannelsForGuild(Guild g) {
         return new WeakHashMap<>(linkedChannels.entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(g))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
@@ -268,12 +270,12 @@ public class ChannelController extends ListenerAdapter {
     /**
      * @return The pairs of channels which should be kept, even when left empty.
      */
-    public HashMap<VoiceChannel, TextChannel> getPermChannels() {
+    public ChannelMap getPermChannels() {
         return permChannels;
     }
 
     @SuppressWarnings("unchecked")
-    WeakHashMap<VoiceChannel, TextChannel> getPermChannelsForGuild(Guild g) {
+    WeakHashMap<TextChannel, Set<VoiceChannel>> getPermChannelsForGuild(Guild g) {
         return new WeakHashMap<>(permChannels.entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(g))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
@@ -291,20 +293,29 @@ public class ChannelController extends ListenerAdapter {
         switch (type) {
             case JOIN:
                 if (isLinked(vcs[0])) {
-                    linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** joined the voice channel").queue();
+                    linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** joined **" +
+                            (isPermanent(vcs[0]) ? vcs[0].getName() : " the voice channel") + "**"
+                    ).queue();
                 }
                 break;
             case LEAVE:
                 if (isLinked(vcs[0])) {
-                    linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** left the voice channel").queue();
+                    linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** left **"
+                            + (isPermanent(vcs[0]) ? vcs[0].getName() : " the voice channel") + "**").queue();
                 }
                 break;
             case MOVE:
-                if (isLinked(vcs[0])) {
-                    linkedChannels.get(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
-                }
-                if (isLinked(vcs[1])) {
-                    linkedChannels.get(vcs[1]).sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
+                if (linkedChannels.getForVoiceChannel(vcs[0]).equals(linkedChannels.getForVoiceChannel(vcs[1]))) {
+                    if (isLinked(vcs[0])) {
+                        linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved from **" + vcs[0].getName() + "** to **" + vcs[1].getName() + "**").queue();
+                    }
+                } else {
+                    if (isLinked(vcs[0])) {
+                        linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
+                    }
+                    if (isLinked(vcs[1])) {
+                        linkedChannels.getForVoiceChannel(vcs[1]).sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
+                    }
                 }
         }
     }
@@ -317,7 +328,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #linkedChannels
      */
     public boolean isLinked(VoiceChannel vc) {
-        return linkedChannels.containsKey(vc);
+        return linkedChannels.values().stream().anyMatch(lc -> lc.equals(vc));
     }
 
     /**
@@ -328,7 +339,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #linkedChannels
      */
     private boolean isLinked(TextChannel tc) {
-        return linkedChannels.containsValue(tc);
+        return linkedChannels.containsKey(tc);
     }
 
     /**
@@ -339,7 +350,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #permChannels
      */
     public boolean isPermanent(VoiceChannel vc) {
-        return permChannels.containsKey(vc);
+        return permChannels.values().stream().anyMatch(lc -> lc.equals(vc));
     }
 
     /**
@@ -350,7 +361,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #permChannels
      */
     private boolean isPermanent(TextChannel tc) {
-        return permChannels.containsValue(tc);
+        return permChannels.containsKey(tc);
     }
 
     /**
@@ -399,14 +410,12 @@ public class ChannelController extends ListenerAdapter {
         VoiceChannel vc = ev.getChannel();
 
         if (isPermanent(vc)) {
-            Logger.log(String.format("Removing \"%s\" from list of permanent channels", vc.getName()));
-            Logger.log(String.format("Removing \"#%s\" from list of permanent channels", permChannels.get(vc).getName()));
             permChannels.remove(vc);
         }
 
         if (isLinked(vc)) {
             Logger.log(String.format("Removing \"%s\" from list of linked channels", vc.getName()));
-            Logger.log(String.format("Removing \"#%s\" from list of linked channels", linkedChannels.get(vc).getName()));
+            Logger.log(String.format("Removing \"#%s\" from list of linked channels", linkedChannels.getForVoiceChannel(vc).getName()));
             linkedChannels.remove(vc);
         }
     }
@@ -419,21 +428,19 @@ public class ChannelController extends ListenerAdapter {
     @Override
     public void onTextChannelDelete(TextChannelDeleteEvent ev) {
         TextChannel tc = ev.getChannel();
-        VoiceChannel vc = permChannels.entrySet().stream()
+        Set<VoiceChannel> vcs = permChannels.entrySet().stream()
                 .filter(entry -> Objects.equals(entry.getKey(), tc))
-                .map(Map.Entry::getKey)
+                .map(Map.Entry::getValue)
                 .findFirst().orElse(null);
 
-        if (vc != null) {
-            if (isPermanent(tc)) {
-                Logger.log("Removing \"" + vc.getName() + "\" from list of permanent channels");
-                Logger.log("Removing \"#" + tc.getName() + "\" from list of permanent channels");
+        if (isPermanent(tc) && vcs != null) {
+            for (VoiceChannel vc : vcs) {
                 permChannels.remove(vc);
             }
+        }
 
-            if (isLinked(tc)) {
-                Logger.log("Removing \"" + vc.getName() + "\" from list of linked channels");
-                Logger.log("Removing \"#" + tc.getName() + "\" from list of linked channels");
+        if (isLinked(tc) && vcs != null) {
+            for (VoiceChannel vc : vcs) {
                 linkedChannels.remove(vc);
             }
         }
@@ -456,7 +463,7 @@ public class ChannelController extends ListenerAdapter {
         // should the voice channel be limited.
         if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
-                Utils.getPO(linkedChannels.get(vc), m,
+                Utils.getPO(linkedChannels.getForVoiceChannel(vc), m,
                         po -> po.getManagerUpdatable()
                                 .grant(Permission.MESSAGE_READ)
                                 .update()
@@ -497,7 +504,7 @@ public class ChannelController extends ListenerAdapter {
         // should the voice channel be limited.
         if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
-                Utils.getPO(linkedChannels.get(vc), m,
+                Utils.getPO(linkedChannels.getForVoiceChannel(vc), m,
                         po -> Utils.removePermissionsFrom(po,
                                 "The channel was left and is limited, requiring non-members to not see the associated text channel",
                                 Permission.MESSAGE_READ));

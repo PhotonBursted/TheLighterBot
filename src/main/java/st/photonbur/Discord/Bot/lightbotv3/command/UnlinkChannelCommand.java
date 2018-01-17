@@ -14,11 +14,11 @@ public class UnlinkChannelCommand extends Command {
             VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
 
             if (l.getChannelController().isLinked(vc)) {
-                TextChannel tc = l.getChannelController().getLinkedChannels().get(vc);
+                TextChannel tc = l.getChannelController().getLinkedChannels().getForVoiceChannel(vc);
 
-                l.getChannelController().getLinkedChannels().remove(vc, tc);
+                l.getChannelController().getLinkedChannels().remove(vc);
                 if (l.getChannelController().isPermanent(vc)) {
-                    l.getChannelController().getPermChannels().remove(vc, tc);
+                    l.getChannelController().getPermChannels().remove(vc);
                 }
 
                 Logger.logAndDelete(String.format("A link has been removed:\n" +
