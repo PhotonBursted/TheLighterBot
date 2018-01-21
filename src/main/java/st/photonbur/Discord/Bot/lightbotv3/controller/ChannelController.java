@@ -11,8 +11,9 @@ import net.dv8tion.jda.core.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.misc.ChannelMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
@@ -28,6 +29,8 @@ public class ChannelController extends ListenerAdapter {
     private enum EventType {
         LEAVE, JOIN, MOVE
     }
+
+    private static final Logger log = LoggerFactory.getLogger(ChannelController.class);
 
     /**
      * Stores the default category specified per guild
@@ -231,9 +234,9 @@ public class ChannelController extends ListenerAdapter {
 
         // Log feedback
         if (cleaned) {
-            Logger.log("Successfully cleaned up group " + vc.getName() + "!");
+            log.info("Successfully cleaned up group " + vc.getName() + "!");
         } else {
-            Logger.log("Something went wrong cleaning up group " + vc.getName() + "...");
+            log.error("Something went wrong cleaning up group " + vc.getName() + "...");
         }
     }
 
@@ -414,8 +417,6 @@ public class ChannelController extends ListenerAdapter {
         }
 
         if (isLinked(vc)) {
-            Logger.log(String.format("Removing \"%s\" from list of linked channels", vc.getName()));
-            Logger.log(String.format("Removing \"#%s\" from list of linked channels", linkedChannels.getForVoiceChannel(vc).getName()));
             linkedChannels.remove(vc);
         }
     }

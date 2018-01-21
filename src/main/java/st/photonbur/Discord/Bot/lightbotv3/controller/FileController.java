@@ -7,8 +7,9 @@ import net.dv8tion.jda.core.entities.Category;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import java.io.*;
 import java.util.Collections;
@@ -16,6 +17,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 public class FileController {
+    private static final Logger log = LoggerFactory.getLogger(FileController.class);
+
     private static FileController instance;
     private final Launcher l;
 
@@ -48,19 +51,19 @@ public class FileController {
 
         if (!directory.exists()) {
             if (!directory.mkdir()) {
-                Logger.log("Couldn't create the guild directory!\n" +
+                log.error("Couldn't create the guild directory!\n" +
                         "Check writing permissions of the bot in the directory it is in.");
             }
         }
 
         File[] guildFiles = directory.listFiles((dir, name) -> name.endsWith(".guild.json"));
-        Logger.log("Processing all guild files...");
+        log.info("Processing all guild files...");
         if (guildFiles != null) {
             for (File file : guildFiles) {
                 readGuild(file);
             }
         }
-        Logger.log(String.format("Done processing guild files.\n\nFound %d pairs of permanent and %d pairs of linked channels.",
+        log.info(String.format("Done processing guild files.\n\nFound %d pairs of permanent and %d pairs of linked channels.",
                 l.getChannelController().getPermChannels().size(), l.getChannelController().getLinkedChannels().size()));
     }
 
@@ -94,16 +97,20 @@ public class FileController {
                     TextChannel tc = l.getBot().getTextChannelById(set.getKey());
 
                     Set<VoiceChannel> vcs = Collections.emptySet();
-                    set.getValue().getAsJsonArray().iterator().forEachRemaining(vcId ->
-                    {
-                        VoiceChannel vc = l.getBot().getVoiceChannelById(vcId.getAsLong());
-                        if (vc != null) {
-                            vcs.add(vc);
-                        }
-                    });
+                    try {
+                        set.getValue().getAsJsonArray().iterator().forEachRemaining(vcId ->
+                        {
+                            VoiceChannel vc = l.getBot().getVoiceChannelById(vcId.getAsLong());
+                            if (vc != null) {
+                                vcs.add(vc);
+                            }
+                        });
 
-                    if (vcs.size() > 0 && tc != null) {
-                        l.getChannelController().getLinkedChannels().put(tc, vcs);
+                        if (vcs.size() > 0 && tc != null) {
+                            l.getChannelController().getLinkedChannels().put(tc, vcs);
+                        }
+                    } catch (IllegalStateException ex) {
+                        log.error("Something went wrong while loading the guild state file.", ex);
                     }
                 });
             }
@@ -127,7 +134,7 @@ public class FileController {
                 });
             }
         } catch (FileNotFoundException ex) {
-            ex.printStackTrace(Logger.out);
+            log.error("Loading the guild's state file failed.", ex);
         }
     }
 
@@ -140,7 +147,7 @@ public class FileController {
         if (linkedChannelPairs.size() > 0 || permChannelPairs.size() > 0 || l.getChannelController().getCategories().containsKey(g)) {
             try (JsonWriter jw = new JsonWriter(new BufferedWriter(new FileWriter(dest)))) {
                 if (dest.createNewFile()) {
-                    Logger.log("Created new file for saving guild " + g.getId());
+                    log.info("Created new file for saving guild " + g.getId());
                 }
 
                 jw.setIndent("  ");
@@ -152,7 +159,7 @@ public class FileController {
                         try {
                             jw.value(entity.getClass().getSimpleName().toLowerCase().replace("impl", "") + "|" + entity.getId());
                         } catch (IOException ex) {
-                            ex.printStackTrace();
+                            log.error("Writing to the guild's config file failed.", ex);
                         }
                     });
                     jw.endArray();
@@ -176,7 +183,7 @@ public class FileController {
 
                 jw.endObject();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error("Writing to the guild's config file failed.", ex);
             }
         } else {
             //noinspection ResultOfMethodCallIgnored
@@ -196,7 +203,7 @@ public class FileController {
 
                 jw.endArray();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error("Writing a channel set to the guild's config file failed.", ex);
             }
         });
     }

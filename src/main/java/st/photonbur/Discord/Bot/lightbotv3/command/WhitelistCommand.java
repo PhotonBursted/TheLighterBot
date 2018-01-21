@@ -5,8 +5,10 @@ import net.dv8tion.jda.core.entities.ISnowflake;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.Selector;
@@ -17,6 +19,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class WhitelistCommand extends Command implements Selector {
+    private static final Logger log = LoggerFactory.getLogger(UnlinkChannelCommand.class);
+
     @Override
     void execute() {
         // Check if the input actually had enough arguments
@@ -154,7 +158,7 @@ public class WhitelistCommand extends Command implements Selector {
     private void performWhitelist(User user) {
         String response = l.getBlacklistController().whitelist(ev.getGuild(), user);
 
-        Logger.logAndDelete(response);
+        LoggerUtils.logAndDelete(log, response);
         l.getDiscordController().sendMessage(ev,
                 String.format("Successfully whitelisted user **%s**!", Utils.userAsString(user)),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
@@ -163,7 +167,7 @@ public class WhitelistCommand extends Command implements Selector {
     private void performWhitelist(Role role) {
         String response = l.getBlacklistController().whitelist(ev.getGuild(), role);
 
-        Logger.logAndDelete(response);
+        LoggerUtils.logAndDelete(log, response);
         l.getDiscordController().sendMessage(ev,
                 String.format("Successfully whitelisted role **%s**!", role.getName()),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);

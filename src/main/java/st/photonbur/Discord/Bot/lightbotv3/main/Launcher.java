@@ -1,6 +1,8 @@
 package st.photonbur.Discord.Bot.lightbotv3.main;
 
 import net.dv8tion.jda.core.JDA;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.*;
 import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
@@ -8,6 +10,7 @@ import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
 import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputListener;
 import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputEvent;
+import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputReader;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -19,13 +22,18 @@ import java.util.Scanner;
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
 public class Launcher implements ConsoleInputListener {
-    public static final String VERSION = "3.1.2";
+    private static final Logger log = LoggerFactory.getLogger(Launcher.class);
+
+    public static final String VERSION = "3.1.3";
 
     private static Launcher instance;
+    private static ConsoleInputReader consoleInputReader = new ConsoleInputReader(System.in, System.out);
     private Properties props = new Properties();
     private Scanner sc;
 
-    private Launcher() { }
+    private Launcher() {
+        consoleInputReader.addListener(this);
+    }
 
     /**
      * As part of the Singleton design pattern, no clones of this instance are permitted.
@@ -71,12 +79,8 @@ public class Launcher implements ConsoleInputListener {
         return instance;
     }
 
-    public Logger getLogger() {
-        return Logger.getInstance();
-    }
-
     public static void main(String[] args) {
-        Logger.log("Launching v" + Launcher.VERSION);
+        log.info("Launching v" + Launcher.VERSION);
         Launcher.getInstance().run();
     }
 
@@ -106,12 +110,12 @@ public class Launcher implements ConsoleInputListener {
 
             getFileController().readAllGuilds();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            log.error("Something went wrong loading the necessary settings to launch.", ex);
         } finally {
             if (inputCfg != null) try {
                 inputCfg.close();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                log.error("Something went wrong closing the configuration file for launching.", ex);
             }
         }
 
@@ -139,10 +143,9 @@ public class Launcher implements ConsoleInputListener {
      * This so that normal behaviour is forced for every element of it.
      */
     private void shutdown() {
-        Logger.log("Shutting down...");
+        log.info("Shutting down...");
 
         sc.close();
-        getLogger().shutdown();
         getBot().shutdown();
 
         System.exit(0);

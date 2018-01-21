@@ -2,11 +2,15 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.VoiceChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 public class PermanentChannelCommand extends Command {
+    private static final Logger log = LoggerFactory.getLogger(InfoCommand.class);
+
     @Override
     void execute() {
         if (ev.getMember().getVoiceState().inVoiceChannel()) {
@@ -15,7 +19,7 @@ public class PermanentChannelCommand extends Command {
             if (!l.getChannelController().isPermanent(vc)) {
                 l.getChannelController().getPermChannels().put(ev.getChannel(), vc);
 
-                Logger.logAndDelete(String.format("%s has been made permanent.", vc.getName()));
+                LoggerUtils.logAndDelete(log, String.format("%s has been made permanent.", vc.getName()));
                 l.getDiscordController().sendMessage(ev.getChannel(),
                         String.format("Successfully made **%s** permanent!", vc.getName()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);

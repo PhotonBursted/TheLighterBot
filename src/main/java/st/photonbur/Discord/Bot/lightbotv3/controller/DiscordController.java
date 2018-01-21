@@ -8,9 +8,11 @@ import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
+import st.photonbur.Discord.Bot.lightbotv3.command.UnlinkChannelCommand;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
@@ -27,9 +29,11 @@ import java.util.function.Consumer;
  */
 @SuppressWarnings("SameParameterValue")
 public class DiscordController {
+    private static final Logger log = LoggerFactory.getLogger(DiscordController.class);
+
     public static final BiConsumer<Throwable, Message> MESSAGE_ACTION_FAIL = (throwable, message) -> {
         if (!throwable.getMessage().toUpperCase().contains("UNKNOWN MESSAGE")) {
-            throwable.printStackTrace();
+            log.error("Something failed acting on a message.", throwable);
 
             message.getChannel().sendMessage("Something went wrong!\n  - " + throwable.getMessage() + "\nContent: " + message.getContentRaw()).queue();
         }
@@ -265,16 +269,16 @@ public class DiscordController {
      * @see CommandParser
      */
     private void start() {
-        Logger.log("Logging in to Discord...");
+        log.info("Logging in to Discord...");
 
         try {
             bot = new JDABuilder(AccountType.BOT)
                     .setToken(token)
-                    .addEventListener(l.getCommandParser(), l.getChannelController(), l.getLogger())
+                    .addEventListener(l.getCommandParser(), l.getChannelController())
                     .buildBlocking();
 
         } catch (LoginException | InterruptedException ex) {
-            ex.printStackTrace();
+            log.error("Something went wrong logging in to Discord.", ex);
         }
     }
 }

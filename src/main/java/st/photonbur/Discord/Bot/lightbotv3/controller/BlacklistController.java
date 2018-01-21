@@ -5,9 +5,7 @@ import net.dv8tion.jda.core.entities.*;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Maintains the blacklist. The blacklist contains users and roles who are not allowed to interact with the bot.
@@ -147,7 +145,7 @@ public class BlacklistController {
                 .filter(entry -> entry.getKey().getGuild().equals(guild))
                 .forEach(entry -> {
                     if (action == Action.BLACKLIST) {
-                        Utils.getPO(entry.getValue(), entity, po -> {
+                        Utils.getPO(entry.getKey(), entity, po -> {
                             if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
                                 po.getManagerUpdatable()
                                         .deny(Permission.MESSAGE_READ)
@@ -176,22 +174,31 @@ public class BlacklistController {
                             });
                         }
                     } else {
-                        PermissionOverride poT = null, poV = null, poC = null;
+                        PermissionOverride poT = null, poC = null;
+                        List<PermissionOverride> poVs = new ArrayList<>();
 
                         if (entity instanceof Role) {
-                            poT = entry.getValue().getPermissionOverride((Role) entity);
-                            poV = entry.getKey().getPermissionOverride((Role) entity);
+                            poT = entry.getKey().getPermissionOverride((Role) entity);
+
+                            for (VoiceChannel vc : entry.getValue()) {
+                                poVs.add(vc.getPermissionOverride((Role) entity));
+                            }
                         } else if (entity instanceof User) {
-                            poT = entry.getValue().getPermissionOverride(guild.getMember((User) entity));
-                            poV = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+                            poT = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+
+                            for (VoiceChannel vc : entry.getValue()) {
+                                poVs.add(vc.getPermissionOverride(guild.getMember((User) entity)));
+                            }
                         }
 
                         if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
                             Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
                         }
 
-                        if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                            Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
+                        for (PermissionOverride poV : poVs) {
+                            if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
+                            }
                         }
 
                         if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {

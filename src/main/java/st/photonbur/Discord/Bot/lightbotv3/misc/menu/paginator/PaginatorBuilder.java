@@ -4,7 +4,6 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Message;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.Control;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.MenuBuilder;
 

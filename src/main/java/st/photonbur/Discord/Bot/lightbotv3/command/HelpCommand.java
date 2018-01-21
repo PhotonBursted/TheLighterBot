@@ -3,7 +3,9 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.MessageEmbed;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.Paginator;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorBuilder;
 
@@ -17,6 +19,8 @@ import java.util.LinkedList;
 import java.util.stream.Collectors;
 
 public class HelpCommand extends Command implements Paginator<MessageEmbed> {
+    private static final Logger log = LoggerFactory.getLogger(HelpCommand.class);
+
     @Override
     void execute() {
         LinkedList<String> commandTextList = new LinkedList<>();
@@ -33,7 +37,7 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
             commandTextList.add(sb);
         });
 
-        Logger.logAndDelete("Begged for help!", (success) ->
+        LoggerUtils.logAndDelete(log, "Begged for help!", (success) ->
                 new PaginatorBuilder<>(this)
                         .setContent(commandTextList)
                         .setPlaceholderMessage("Requesting help...")

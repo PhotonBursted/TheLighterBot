@@ -4,12 +4,16 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 public class TemporaryChannelSizeCommand extends Command {
+    private static final Logger log = LoggerFactory.getLogger(TemporaryChannelSizeCommand.class);
+
     @Override
     public void execute() {
         // Get the channels targeted by the issuer
@@ -43,7 +47,7 @@ public class TemporaryChannelSizeCommand extends Command {
                         // If a channel is linked, update its permissions
                         if (tc != null) {
                             // Send feedback to the logs and issuer
-                            Logger.logAndDelete(String.format("Changed user limit of channel \"%s\" to %s.",
+                            LoggerUtils.logAndDelete(log, String.format("Changed user limit of channel \"%s\" to %s.",
                                     vc.getName(), intLimit));
                             l.getDiscordController().sendMessage(ev,
                                     String.format("**%s** changed the user limit %sto **%s**.",

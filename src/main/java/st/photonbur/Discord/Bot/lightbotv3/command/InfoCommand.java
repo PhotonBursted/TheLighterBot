@@ -3,13 +3,17 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDAInfo;
 import net.dv8tion.jda.core.Permission;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 import java.awt.*;
 
 public class InfoCommand extends Command {
+    private static final Logger log = LoggerFactory.getLogger(InfoCommand.class);
+
     @Override
     void execute() {
         EmbedBuilder eb = new EmbedBuilder();
@@ -26,7 +30,7 @@ public class InfoCommand extends Command {
                 "Library: `JDA v" + JDAInfo.VERSION + "`\n" +
                 "Connected guilds: `" + l.getBot().getGuildCache().size() + "`", false);
 
-        Logger.logAndDelete("Showed bot info");
+        LoggerUtils.logAndDelete(log, "Showed bot info");
         l.getDiscordController().sendMessage(ev, Color.WHITE, eb,
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }

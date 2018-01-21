@@ -3,13 +3,17 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
 import net.dv8tion.jda.core.entities.Guild;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.*;
 
 public class TemporaryChannelCommand extends Command {
+    private static final Logger log = LoggerFactory.getLogger(TemporaryChannelCommand.class);
+
     /**
      * Constructs the temporary channels needed to complete and instantiate a temporary channel set.
      *
@@ -47,7 +51,7 @@ public class TemporaryChannelCommand extends Command {
             Category parent;
             HashMap<Guild, Category> categories = l.getChannelController().getCategories();
 
-            Logger.logAndDelete("Creating new temporary channel set\n" +
+            LoggerUtils.logAndDelete(log, "Creating new temporary channel set\n" +
                     " - Name: " + channelName);
 
             // Determine if a category should be created or not.
@@ -72,7 +76,7 @@ public class TemporaryChannelCommand extends Command {
                             ev.getMember().getAsMention(), channelName),
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL
             );
-            Logger.log("Created group " + channelName + "!");
+            log.info("Created group " + channelName + "!");
         } else {
             // If no channel is available, send feedback to the user
             if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0) {

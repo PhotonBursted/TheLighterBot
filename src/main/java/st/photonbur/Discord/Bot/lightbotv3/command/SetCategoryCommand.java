@@ -2,8 +2,10 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.Selector;
@@ -14,6 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class SetCategoryCommand extends Command implements Selector {
+    private static final Logger log = LoggerFactory.getLogger(SetCategoryCommand.class);
+
     private Category c;
     private String search;
 
@@ -90,12 +94,12 @@ public class SetCategoryCommand extends Command implements Selector {
                 l.getChannelController().getCategories().remove(ev.getGuild());
                 l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.",
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                Logger.logAndDelete("Removed default category from " + ev.getGuild().getName());
+                LoggerUtils.logAndDelete(log, "Removed default category from " + ev.getGuild().getName());
             } else {
                 l.getChannelController().getCategories().put(ev.getGuild(), c);
                 l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")",
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                Logger.logAndDelete("Set default category to " + c.getName() + " for " + ev.getGuild().getName());
+                LoggerUtils.logAndDelete(log, "Set default category to " + c.getName() + " for " + ev.getGuild().getName());
             }
 
             l.getFileController().saveGuild(ev.getGuild());
