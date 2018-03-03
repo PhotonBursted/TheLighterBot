@@ -23,14 +23,12 @@ public class ChannelMap extends LinkedHashMap<TextChannel, Set<VoiceChannel>> {
         return textChannelEntry == null ? null : textChannelEntry.getKey();
     }
 
-    public Set<VoiceChannel> put(TextChannel key, VoiceChannel value) {
+    public void put(TextChannel key, VoiceChannel value) {
         if (keySet().contains(key)) {
             get(key).add(value);
         } else {
             put(key, Collections.singleton(value));
         }
-
-        return get(key);
     }
 
     public void remove(VoiceChannel vc) {
@@ -38,7 +36,7 @@ public class ChannelMap extends LinkedHashMap<TextChannel, Set<VoiceChannel>> {
 
         optionalEntry.ifPresent(entry -> {
             log.info(String.format("Removing \"%s\" from list of " + name + " channels", vc.getName()));
-            remove(vc);
+            entry.getValue().remove(vc);
 
             if (entry.getValue().size() == 0) {
                 log.info(String.format("Removing \"#%s\" from list of " + name + " channels", getForVoiceChannel(vc).getName()));
