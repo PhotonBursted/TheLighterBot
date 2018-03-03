@@ -1,8 +1,10 @@
 # Created by .ignore support plugin (hsz.mobi)
 .idea/
-LightBotv3.iml
-src/main/java/META-INF/
+db/
+out/
 src/main/resources/
 src/test/
+target/
+dependency-reduced-pom.xml
 visualize.bat
-/db/
+LightBot.iml

@@ -2,6 +2,7 @@ package st.photonbur.Discord.Bot.lightbotv3.controller;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
@@ -69,14 +70,28 @@ public class BlacklistController {
      *
      * @param g      The guild to apply the blacklist to
      * @param entity The user or role to target
-     * @param <T>    The target object has to implement {@link ISnowflake} and {@link IMentionable}
      * @return A response string to print into the logs
      */
-    public <T extends ISnowflake & IMentionable> String blacklist(Guild g, T entity) {
+    public String blacklist(Guild g, BannableEntity entity) {
+        return blacklist(g, entity, true);
+    }
+
+    /**
+     * Blacklists a {@link User user} or {@link Role role} for a certain guild.
+     *
+     * @param g      The guild to apply the blacklist to
+     * @param entity The user or role to target
+     * @return A response string to print into the logs
+     */
+    public String blacklist(Guild g, BannableEntity entity, boolean writeToDb) {
         blacklist.putIfAbsent(g, new HashSet<>());
         blacklist.get(g).add(entity);
 
         updateChannelPermOverrides(Action.BLACKLIST, g, entity);
+
+        if (writeToDb) {
+            l.getFileController().applyBlacklistAddition(g, entity);
+        }
 
         return confirmAction(Action.BLACKLIST, g, entity);
     }
@@ -90,7 +105,7 @@ public class BlacklistController {
      * @param <T>    The target object has to implement both {@link ISnowflake} and {@link IMentionable}
      * @return A response string to print into the logs
      */
-    private static <T extends ISnowflake & IMentionable> String confirmAction(Action action, Guild g, T entity) {
+    private static <T extends ISnowflake > String confirmAction(Action action, Guild g, T entity) {
         String entityType = entity.getClass().getSimpleName().toLowerCase().replace("impl", "");
 
         return String.format("%sed a %s in guild \"%s:\"\n" +
@@ -119,6 +134,21 @@ public class BlacklistController {
         return blacklistees != null &&
                 blacklistees.size() != 0 &&
                 blacklistees.stream().anyMatch(item -> item.getId().equals(targetID));
+    }
+
+    /**
+     * Checks if an entity is currently whitelisted within their guild.
+     *
+     * @param g        The {@link Guild guild} to perform the check on
+     * @param targetID The long representation of the target's unique ID
+     * @return True if the guild's blacklist contains an entity with a unique ID matching the target
+     */
+    public boolean isBlacklisted(Guild g, long targetID) {
+        Set<ISnowflake> blacklistees = blacklist.get(g);
+
+        return blacklistees != null &&
+                blacklistees.size() != 0 &&
+                blacklistees.stream().anyMatch(item -> item.getIdLong() == targetID);
     }
 
     /**
@@ -220,14 +250,29 @@ public class BlacklistController {
      * Whitelists a {@link User user} or {@link Role role} for a certain guild.
      *
      * @param g      The guild to remove the blacklist to
-     * @param entity The user or role to target
-     * @param <T>    The target object has to implement {@link ISnowflake} and {@link IMentionable}
+     * @param entity The wrapped representation of the Discord entity to target
      * @return A response string to print into the logs
      */
-    public <T extends ISnowflake & IMentionable> String whitelist(Guild g, T entity) {
+    public String whitelist(Guild g, BannableEntity entity) {
+        return whitelist(g, entity, true);
+    }
+
+    /**
+     * Whitelists a {@link User user} or {@link Role role} for a certain guild.
+     *
+     * @param g      The guild to remove the blacklist to
+     * @param entity The wrapped representation of the Discord entity to target
+     * @param writeToDb Whether or not to write the change to the database
+     * @return A response string to print into the logs
+     */
+    String whitelist(Guild g, BannableEntity entity, boolean writeToDb) {
         blacklist.get(g).remove(entity);
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);
+
+        if (writeToDb) {
+            l.getFileController().applyWhitelistAddition(g, entity);
+        }
 
         return confirmAction(Action.WHITELIST, g, entity);
     }

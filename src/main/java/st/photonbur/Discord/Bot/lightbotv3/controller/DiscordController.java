@@ -11,7 +11,6 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
-import st.photonbur.Discord.Bot.lightbotv3.command.UnlinkChannelCommand;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 
 import javax.security.auth.login.LoginException;
