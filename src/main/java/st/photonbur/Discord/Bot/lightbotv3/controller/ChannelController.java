@@ -1,6 +1,5 @@
 package st.photonbur.Discord.Bot.lightbotv3.controller;
 
-import javax.annotation.Nullable;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.channel.text.TextChannelDeleteEvent;
@@ -17,12 +16,12 @@ import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.ChannelMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChannelController extends ListenerAdapter {
@@ -263,25 +262,11 @@ public class ChannelController extends ListenerAdapter {
         return linkedChannels;
     }
 
-    @SuppressWarnings("unchecked")
-    WeakHashMap<TextChannel, Set<VoiceChannel>> getLinkedChannelsForGuild(Guild g) {
-        return new WeakHashMap<>(linkedChannels.entrySet().stream()
-                .filter(entry -> entry.getKey().getGuild().equals(g))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-    }
-
     /**
      * @return The pairs of channels which should be kept, even when left empty.
      */
     public ChannelMap getPermChannels() {
         return permChannels;
-    }
-
-    @SuppressWarnings("unchecked")
-    WeakHashMap<TextChannel, Set<VoiceChannel>> getPermChannelsForGuild(Guild g) {
-        return new WeakHashMap<>(permChannels.entrySet().stream()
-                .filter(entry -> entry.getKey().getGuild().equals(g))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     /**
@@ -293,31 +278,37 @@ public class ChannelController extends ListenerAdapter {
      * @param vcs    The voice channel(s) in question
      */
     private void informUserAbout(EventType type, Member member, VoiceChannel... vcs) {
+        TextChannel[] tcs = new TextChannel[] {
+                linkedChannels.getForVoiceChannel(vcs[0]),
+                linkedChannels.getForVoiceChannel(vcs[1])
+        };
+
         switch (type) {
             case JOIN:
                 if (isLinked(vcs[0])) {
-                    linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** joined **" +
-                            (isPermanent(vcs[0]) ? vcs[0].getName() : " the voice channel") + "**"
+                    tcs[0].sendMessage("**" + member.getEffectiveName() + "** joined " +
+                            (isPermanent(vcs[0]) || linkedChannels.get(tcs[0]).size() > 1 ? String.format("**%s**", vcs[0].getName()) : "the voice channel")
                     ).queue();
                 }
                 break;
             case LEAVE:
                 if (isLinked(vcs[0])) {
-                    linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** left **"
-                            + (isPermanent(vcs[0]) ? vcs[0].getName() : " the voice channel") + "**").queue();
+                    tcs[0].sendMessage("**" + member.getEffectiveName() + "** left "
+                            + (isPermanent(vcs[0]) || linkedChannels.get(tcs[0]).size() > 1 ? String.format("**%s**", vcs[0].getName()) : "the voice channel")
+                    ).queue();
                 }
                 break;
             case MOVE:
-                if (linkedChannels.getForVoiceChannel(vcs[0]).equals(linkedChannels.getForVoiceChannel(vcs[1]))) {
+                if (tcs[0].equals(tcs[1])) {
                     if (isLinked(vcs[0])) {
-                        linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved from **" + vcs[0].getName() + "** to **" + vcs[1].getName() + "**").queue();
+                        tcs[0].sendMessage("**" + member.getEffectiveName() + "** moved from **" + vcs[0].getName() + "** to **" + vcs[1].getName() + "**").queue();
                     }
                 } else {
                     if (isLinked(vcs[0])) {
-                        linkedChannels.getForVoiceChannel(vcs[0]).sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
+                        tcs[0].sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
                     }
                     if (isLinked(vcs[1])) {
-                        linkedChannels.getForVoiceChannel(vcs[1]).sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
+                        tcs[1].sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
                     }
                 }
         }
@@ -331,7 +322,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #linkedChannels
      */
     public boolean isLinked(VoiceChannel vc) {
-        return linkedChannels.values().stream().anyMatch(lc -> lc.equals(vc));
+        return linkedChannels.values().stream().anyMatch(set -> set.stream().anyMatch(tvc -> tvc.equals(vc)));
     }
 
     /**
@@ -353,7 +344,7 @@ public class ChannelController extends ListenerAdapter {
      * @see #permChannels
      */
     public boolean isPermanent(VoiceChannel vc) {
-        return permChannels.values().stream().anyMatch(lc -> lc.equals(vc));
+        return permChannels.values().stream().anyMatch(set -> set.stream().anyMatch(tvc -> tvc.equals(vc)));
     }
 
     /**
