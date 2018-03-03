@@ -25,7 +25,7 @@ public class Utils {
         input.drainTo(inputParts);
 
         // Return the elements concatenated by spaces
-        return String.join(" ", inputParts.toArray(new String[inputParts.size()]));
+        return String.join(" ", inputParts);
     }
 
     /**
