@@ -1,13 +1,14 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.ISnowflake;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Role;
-import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableRole;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableUser;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
@@ -18,8 +19,13 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class WhitelistCommand extends Command implements Selector {
+public class WhitelistCommand extends Command implements Selector<BannableEntity> {
     private static final Logger log = LoggerFactory.getLogger(UnlinkChannelCommand.class);
+
+    public WhitelistCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("whitelist", "wl"));
+    }
 
     @Override
     void execute() {
@@ -38,12 +44,12 @@ public class WhitelistCommand extends Command implements Selector {
                     // If there was only one user found, perform the whitelist.
                     // Otherwise, generate a selector and let the user decide what the target was
                     if (candidates.size() == 1) {
-                        performWhitelist(candidates.get(0).getUser());
+                        performWhitelist(new BannableUser(candidates.get(0).getUser().getIdLong()));
                     } else {
-                        LinkedHashMap<String, User> candidateMap = new LinkedHashMap<>();
-                        candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), c.getUser()));
+                        LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), new BannableUser(c.getUser())));
 
-                        new SelectorBuilder<User>(this)
+                        new SelectorBuilder<>(this)
                                 .setOptionMap(candidateMap)
                                 .build();
                     }
@@ -60,12 +66,12 @@ public class WhitelistCommand extends Command implements Selector {
                     // If there was only one role found, perform the whitelist.
                     // Otherwise, generate a selector and let the user decide what the target was
                     if (candidates.size() == 1) {
-                        performWhitelist(candidates.get(0));
+                        performWhitelist(new BannableRole(candidates.get(0).getIdLong()));
                     } else {
-                        LinkedHashMap<String, Role> candidateMap = new LinkedHashMap<>();
-                        candidates.forEach(c -> candidateMap.put(c.getName(), c));
+                        LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(c.getName(), new BannableRole(c)));
 
-                        new SelectorBuilder<Role>(this)
+                        new SelectorBuilder<>(this)
                                 .setOptionMap(candidateMap)
                                 .build();
                     }
@@ -76,22 +82,22 @@ public class WhitelistCommand extends Command implements Selector {
             } else {
                 // Detect if the id specified is already whitelisted
                 if (l.getBlacklistController().isBlacklisted(ev.getGuild(), target)) {
+                    BannableEntity targetEntity = null;
+
                     // Test if the id was targeting a role or member. If not, throw an error, otherwise whitelist the target
                     if (ev.getGuild().getRoles().stream().anyMatch(role -> role.getId().equals(target))) {
-                        Role targetRole = l.getBot().getRoleById(target);
+                        targetEntity = new BannableRole(target);
+                    }
+                    if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
+                        targetEntity = new BannableUser(target);
+                    }
 
-                        String response = l.getBlacklistController().whitelist(ev.getGuild(), targetRole);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                    } else if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
-                        User targetUser = l.getBot().getUserById(target);
-
-                        String response = l.getBlacklistController().whitelist(ev.getGuild(), targetUser);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                    } else {
+                    if (targetEntity == null) {
                         handleError("The ID you supplied was neither a role or user in this server!");
                     }
+
+                    String response = l.getBlacklistController().whitelist(ev.getGuild(), targetEntity);
+                    l.getDiscordController().sendMessage(ev, response, DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 } else {
                     handleError("The entity you tried to whitelist is already whitelisted for this server!");
                 }
@@ -99,11 +105,6 @@ public class WhitelistCommand extends Command implements Selector {
         } else {
             handleError("You didn't supply the ID of the entity to whitelist!\nPlease use `+whitelist <idToWhitelist>`.");
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] {"whitelist", "wl"};
     }
 
     @Override
@@ -126,19 +127,13 @@ public class WhitelistCommand extends Command implements Selector {
     }
 
     @Override
-    public void onSelection(SelectionEvent<?> selEv) {
+    public void onSelection(SelectionEvent<BannableEntity> selEv) {
         if (selEv.selectionWasMade()) {
-            Object target = selEv.getSelectedOption();
+            BannableEntity target = selEv.getSelectedOption();
 
             // If the target isn't whitelisted yet, do so, and provide feedback
-            if (l.getBlacklistController().isBlacklisted(ev.getGuild(), ((ISnowflake) target).getId())) {
-                if (target instanceof User) {
-                    performWhitelist(((User) target));
-                } else if (target instanceof Role) {
-                    performWhitelist(((Role) target));
-                }
-
-                l.getFileController().saveGuild(ev.getGuild());
+            if (l.getBlacklistController().isBlacklisted(ev.getGuild(), target.getIdLong())) {
+                performWhitelist(target);
             } else {
                 if (target instanceof User) {
                     handleError(String.format("User **%s** is already whitelisted for this server!",
@@ -147,29 +142,22 @@ public class WhitelistCommand extends Command implements Selector {
                     handleError(String.format("Role **%s** is already whitelisted for this server!",
                             ((Role) target).getName()));
                 } else {
-                    handleError("This entity is already blacklisted for this server!");
+                    handleError("This entity is already whitelisted for this server!");
                 }
             }
         } else {
-            handleError("The blacklist action was cancelled.");
+            handleError("The whitelisted action was cancelled.");
         }
     }
 
-    private void performWhitelist(User user) {
-        String response = l.getBlacklistController().whitelist(ev.getGuild(), user);
+    private void performWhitelist(BannableEntity target) {
+        String response = l.getBlacklistController().whitelist(ev.getGuild(), target);
 
         LoggerUtils.logAndDelete(log, response);
         l.getDiscordController().sendMessage(ev,
-                String.format("Successfully whitelisted user **%s**!", Utils.userAsString(user)),
-                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-    }
-
-    private void performWhitelist(Role role) {
-        String response = l.getBlacklistController().whitelist(ev.getGuild(), role);
-
-        LoggerUtils.logAndDelete(log, response);
-        l.getDiscordController().sendMessage(ev,
-                String.format("Successfully whitelisted role **%s**!", role.getName()),
+                String.format("Successfully whitelisted %s **%s**!", target.getClassName().toLowerCase(),
+                        target.isOfClass(User.class) ? Utils.userAsString((User) (target.get())) :
+                        target.isOfClass(Role.class) ? ((Role) target.get()).getName() : ""),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
 }

@@ -4,6 +4,7 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -15,11 +16,16 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class SetCategoryCommand extends Command implements Selector {
+public class SetCategoryCommand extends Command implements Selector<Category> {
     private static final Logger log = LoggerFactory.getLogger(SetCategoryCommand.class);
 
     private Category c;
     private String search;
+
+    public SetCategoryCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("setcat", "sc", "setcategory"));
+    }
 
     @Override
     void execute() {
@@ -32,7 +38,7 @@ public class SetCategoryCommand extends Command implements Selector {
                     LinkedHashMap<String, Category> candidateMap = new LinkedHashMap<>();
                     candidates.forEach(candidate -> candidateMap.put(candidate.getName() + "(ID " + candidate.getId() + ")", candidate));
 
-                    new SelectorBuilder<Category>(this)
+                    new SelectorBuilder<>(this)
                             .setOptionMap(candidateMap)
                             .build();
                     return;
@@ -51,11 +57,6 @@ public class SetCategoryCommand extends Command implements Selector {
         } else {
             handleError("The category to set wasn't specified!");
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] { "setcat", "sc", "setcategory" };
     }
 
     @Override
@@ -78,9 +79,9 @@ public class SetCategoryCommand extends Command implements Selector {
     }
 
     @Override
-    public void onSelection(SelectionEvent<?> selEv) {
+    public void onSelection(SelectionEvent<Category> selEv) {
         if (selEv.selectionWasMade()) {
-            c = (Category) selEv.getSelectedOption();
+            c = selEv.getSelectedOption();
 
             performCategoryChange();
         } else {
@@ -92,17 +93,20 @@ public class SetCategoryCommand extends Command implements Selector {
         if (c != null || search.equals("remove") || search.equals("null")) {
             if (c == null) {
                 l.getChannelController().getCategories().remove(ev.getGuild());
+                l.getFileController().applyDefaultCategoryDeletion(ev.getGuild());
+
                 l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.",
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 LoggerUtils.logAndDelete(log, "Removed default category from " + ev.getGuild().getName());
             } else {
                 l.getChannelController().getCategories().put(ev.getGuild(), c);
+                l.getFileController().applyDefaultCategoryAddition(ev.getGuild(), c);
+
                 l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")",
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 LoggerUtils.logAndDelete(log, "Set default category to " + c.getName() + " for " + ev.getGuild().getName());
             }
 
-            l.getFileController().saveGuild(ev.getGuild());
         } else {
             handleError("The category you specified couldn't be found!");
         }

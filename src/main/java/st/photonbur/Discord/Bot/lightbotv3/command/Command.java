@@ -3,6 +3,10 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollection;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -18,6 +22,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class Command {
+    private static final Logger log = LoggerFactory.getLogger(Command.class);
+
     /**
      * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
      */
@@ -29,9 +35,16 @@ public abstract class Command {
     LinkedBlockingQueue<String> input;
 
     final Launcher l;
+    private CommandAliasCollection aliases;
 
-    Command() {
+    Command(CommandAliasCollectionBuilder aliasCollectionBuilder) {
         this.l = Launcher.getInstance();
+
+        applyAliases(aliasCollectionBuilder);
+    }
+
+    private void applyAliases(CommandAliasCollectionBuilder builder) {
+        this.aliases = builder.build();
     }
 
     /**
@@ -67,11 +80,9 @@ public abstract class Command {
         }
     }
 
-    /**
-     * Method to be implemented with aliases of the command.
-     * @return The aliases this command possesses
-     */
-    abstract String[] getAliases();
+    final CommandAliasCollection getAliasCollection() {
+        return aliases;
+    }
 
     /**
      * Method to be implemented with the description describing this command.
@@ -158,11 +169,11 @@ public abstract class Command {
             // Don't use the original input as this operation clears all other input from the queue as well.
             String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input));
             // Try to find an alias that complies with the start of the input sequence
-            success = Arrays.stream(this.getAliases()).anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
+            success = this.getAliasCollection().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
 
             // If so, cut the first part of the input off
             if (success) {
-                for (int i = 0; i < this.getAliases()[0].split("\\s+").length; i++) {
+                for (int i = 0; i < this.getAliasCollection().getAliasLength(); i++) {
                     input.poll();
                 }
             }

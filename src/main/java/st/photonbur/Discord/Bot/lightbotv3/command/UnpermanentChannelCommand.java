@@ -4,12 +4,18 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 public class UnpermanentChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(UnpermanentChannelCommand.class);
+
+    public UnpermanentChannelCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("unperm", "up"));
+    }
 
     @Override
     void execute() {
@@ -24,18 +30,13 @@ public class UnpermanentChannelCommand extends Command {
                         String.format("Successfully made **%s** temporary!%s", vc.getName(),
                                 l.getChannelController().isLinked(vc) ? "\n__Be aware that leaving the channel empty will now delete the channel!__" : ""),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().saveGuild(ev.getGuild());
+                l.getFileController().applyPermDeletion(ev.getChannel(), vc);
             } else {
                 handleError(MessageContent.CHANNEL_NOT_PERMANENT);
             }
         } else {
             handleError(MessageContent.NOT_IN_VOICE_CHANNEL);
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] { "unperm", "up" };
     }
 
     @Override

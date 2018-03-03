@@ -5,12 +5,18 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 public class LinkChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(LinkChannelCommand.class);
+
+    public LinkChannelCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("link", "l"));
+    }
 
     @Override
     void execute() {
@@ -23,25 +29,20 @@ public class LinkChannelCommand extends Command {
                 l.getChannelController().getPermChannels().put(tc, vc);
 
                 LoggerUtils.logAndDelete(log, String.format("A new link has been established:\n" +
-                        " - VC: %s (%s)\n" +
-                        " - TC: %s (%s)",
+                                " - VC: %s (%s)\n" +
+                                " - TC: %s (%s)",
                         vc.getName(), vc.getId(),
                         tc.getName(), tc.getId()));
                 l.getDiscordController().sendMessage(tc,
                         String.format("Successfully linked **%s** to **%s**!", vc.getName(), tc.getAsMention()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().saveGuild(ev.getGuild());
+                l.getFileController().applyLinkAddition(tc, vc);
             } else {
                 handleError(MessageContent.CHANNEL_ALREADY_LINKED);
             }
         } else {
             handleError(MessageContent.NOT_IN_VOICE_CHANNEL);
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] { "link", "l" };
     }
 
     @Override

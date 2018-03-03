@@ -1,13 +1,16 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.ISnowflake;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableRole;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableUser;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectionEvent;
@@ -18,8 +21,13 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class BlacklistCommand extends Command implements Selector {
+public class BlacklistCommand extends Command implements Selector<BannableEntity> {
     private static final Logger log = LoggerFactory.getLogger(BlacklistCommand.class);
+
+    public BlacklistCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("blacklist", "bl"));
+    }
 
     @Override
     void execute() {
@@ -38,12 +46,12 @@ public class BlacklistCommand extends Command implements Selector {
                     // If there was only one user found, perform the blacklist.
                     // Otherwise, generate a selector and let the user decide what the target was
                     if (candidates.size() == 1) {
-                        performBlacklist(candidates.get(0).getUser());
+                        performBlacklist(new BannableUser(candidates.get(0).getUser()));
                     } else {
-                        LinkedHashMap<String, User> candidateMap = new LinkedHashMap<>();
-                        candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), c.getUser()));
+                        LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), new BannableUser(c.getUser())));
 
-                        new SelectorBuilder<User>(this)
+                        new SelectorBuilder<>(this)
                                 .setOptionMap(candidateMap)
                                 .build();
                     }
@@ -60,12 +68,12 @@ public class BlacklistCommand extends Command implements Selector {
                     // If there was only one user found, perform the blacklist.
                     // Otherwise, generate a selector and let the user decide what the target was
                     if (candidates.size() == 1) {
-                        performBlacklist(candidates.get(0));
+                        performBlacklist(new BannableRole(candidates.get(0)));
                     } else {
-                        LinkedHashMap<String, Role> candidateMap = new LinkedHashMap<>();
-                        candidates.forEach(c -> candidateMap.put(c.getName(), c));
+                        LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
+                        candidates.forEach(c -> candidateMap.put(c.getName(), new BannableEntity<Role>(c)));
 
-                        new SelectorBuilder<Role>(this)
+                        new SelectorBuilder<>(this)
                                 .setOptionMap(candidateMap)
                                 .build();
                     }
@@ -76,22 +84,22 @@ public class BlacklistCommand extends Command implements Selector {
             } else {
                 // Detect if the id specified is already blacklisted
                 if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), target)) {
-                    // Test if the id was targeting a role or member. If not, throw an error, otherwise blacklist the target
+                    BannableEntity targetEntity = null;
+
+                    // Test if the id was targeting a role or user. If not, throw an error, otherwise whitelist the target
                     if (ev.getGuild().getRoles().stream().anyMatch(role -> role.getId().equals(target))) {
-                        Role targetRole = l.getBot().getRoleById(target);
+                        targetEntity = new BannableRole(target);
+                    }
+                    if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
+                        targetEntity = new BannableUser(target);
+                    }
 
-                        String response = l.getBlacklistController().blacklist(ev.getGuild(), targetRole);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                    } else if (ev.getGuild().getMembers().stream().anyMatch(member -> member.getUser().getId().equals(target))) {
-                        User targetUser = l.getBot().getUserById(target);
-
-                        String response = l.getBlacklistController().blacklist(ev.getGuild(), targetUser);
-                        l.getDiscordController().sendMessage(ev, response,
-                                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                    } else {
+                    if (targetEntity == null) {
                         handleError("The ID you supplied was neither a role or user in this server!");
                     }
+
+                    String response = l.getBlacklistController().blacklist(ev.getGuild(), targetEntity);
+                    l.getDiscordController().sendMessage(ev, response, DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
                 } else {
                     handleError("The entity you tried to blacklist is already blacklisted for this server!");
                 }
@@ -99,11 +107,6 @@ public class BlacklistCommand extends Command implements Selector {
         } else {
             handleError("You didn't supply the ID of the entity to blacklist!\nPlease use `+blacklist <idToBlacklist>`.");
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] {"blacklist", "bl"};
     }
 
     @Override
@@ -126,19 +129,13 @@ public class BlacklistCommand extends Command implements Selector {
     }
 
     @Override
-    public void onSelection(SelectionEvent<?> selEv) {
+    public void onSelection(SelectionEvent<BannableEntity> selEv) {
         if (selEv.selectionWasMade()) {
-            Object target = selEv.getSelectedOption();
+            BannableEntity target = selEv.getSelectedOption();
 
             // If the target isn't blacklisted yet, do so, and provide feedback
-            if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), ((ISnowflake) target).getId())) {
-                if (target instanceof User) {
-                    performBlacklist(((User) target));
-                } else if (target instanceof Role) {
-                    performBlacklist(((Role) target));
-                }
-
-                l.getFileController().saveGuild(ev.getGuild());
+            if (!l.getBlacklistController().isBlacklisted(ev.getGuild(), target.getId())) {
+                performBlacklist(target);
             } else {
                 if (target instanceof User) {
                     handleError(String.format("User **%s** is already blacklisted for this server!",
@@ -155,21 +152,14 @@ public class BlacklistCommand extends Command implements Selector {
         }
     }
 
-    private void performBlacklist(User user) {
-        String response = l.getBlacklistController().blacklist(ev.getGuild(), user);
+    private void performBlacklist(BannableEntity target) {
+        String response = l.getBlacklistController().whitelist(ev.getGuild(), target);
 
         LoggerUtils.logAndDelete(log, response);
         l.getDiscordController().sendMessage(ev,
-                String.format("Successfully blacklisted user **%s**!", Utils.userAsString(user)),
-                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-    }
-
-    private void performBlacklist(Role role) {
-        String response = l.getBlacklistController().blacklist(ev.getGuild(), role);
-
-        LoggerUtils.logAndDelete(log, response);
-        l.getDiscordController().sendMessage(ev,
-                String.format("Successfully blacklisted role **%s**!", role.getName()),
+                String.format("Successfully blacklisted %s **%s**!", target.getClassName().toLowerCase(),
+                        target.isOfClass(User.class) ? Utils.userAsString((User) (target.get())) :
+                        target.isOfClass(Role.class) ? ((Role) target.get()).getName() : ""),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
 }

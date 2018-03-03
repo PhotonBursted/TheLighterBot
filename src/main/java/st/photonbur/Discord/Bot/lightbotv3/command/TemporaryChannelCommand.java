@@ -5,6 +5,7 @@ import net.dv8tion.jda.core.entities.Category;
 import net.dv8tion.jda.core.entities.Guild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
@@ -13,6 +14,11 @@ import java.util.*;
 
 public class TemporaryChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(TemporaryChannelCommand.class);
+
+    public TemporaryChannelCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("tempchan", "tc"));
+    }
 
     /**
      * Constructs the temporary channels needed to complete and instantiate a temporary channel set.
@@ -35,7 +41,7 @@ public class TemporaryChannelCommand extends Command {
                                 l.getChannelController().setNewChannelTimeout(vc);
 
                                 // Update the configs regarding the affected guild
-                                l.getFileController().saveGuild(ev.getGuild());
+                                l.getFileController().applyLinkAddition(tc, vc);
                             }));
         }
     }
@@ -87,11 +93,6 @@ public class TemporaryChannelCommand extends Command {
                         "Try again with another name.");
             }
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] {"tempchan", "tc"};
     }
 
     @Override

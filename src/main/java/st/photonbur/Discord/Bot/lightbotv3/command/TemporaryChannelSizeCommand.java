@@ -6,6 +6,7 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
@@ -13,6 +14,12 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 public class TemporaryChannelSizeCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(TemporaryChannelSizeCommand.class);
+
+    public TemporaryChannelSizeCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("tempchan", "tc")
+                .addAliasPart("-s", "-size"));
+    }
 
     @Override
     public void execute() {
@@ -103,7 +110,7 @@ public class TemporaryChannelSizeCommand extends Command {
                         handleError(MessageContent.INVALID_INPUT, "Only integers between 0 (inclusive) and 99 (inclusive) are allowed!");
                     }
                 } else {
-                    handleError(MessageContent.PERMISSIONS_REQUIRED_PERMANENT_CHANNEL_SIZE_CHANGE);
+                    handleError(MessageContent.PERMISSIONS_REQUIRED, Permission.MANAGE_CHANNEL.name(), "change the size of permanent voice channels");
                 }
             } else {
                 handleError(MessageContent.AFK_CHANNEL_ACTION_NOT_PERMITTED);
@@ -114,12 +121,8 @@ public class TemporaryChannelSizeCommand extends Command {
     }
 
     @Override
-    public String[] getAliases() {
-        return new String[] {"tempchan -s", "tempchan -size", "tc -s", "tc -size"};
-    }
-
-    @Override
-    public String getDescription() {
+    public String getDescription()
+    {
         return "Adjusts the user limit of a channel without needing special permissions.";
     }
 

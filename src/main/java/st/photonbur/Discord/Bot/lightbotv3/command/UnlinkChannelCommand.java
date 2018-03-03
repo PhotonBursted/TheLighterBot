@@ -5,12 +5,18 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 public class UnlinkChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(UnlinkChannelCommand.class);
+
+    public UnlinkChannelCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("unlink", "ul"));
+    }
 
     @Override
     void execute() {
@@ -33,18 +39,13 @@ public class UnlinkChannelCommand extends Command {
                 l.getDiscordController().sendMessage(ev,
                         String.format("Successfully unlinked **%s** from **%s**!", vc.getName(), tc.getAsMention()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().saveGuild(ev.getGuild());
+                l.getFileController().applyLinkDeletion(tc, vc);
             } else {
                 handleError(MessageContent.CHANNEL_NOT_LINKED);
             }
         } else {
             handleError(MessageContent.NOT_IN_VOICE_CHANNEL);
         }
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] { "unlink", "ul" };
     }
 
     @Override

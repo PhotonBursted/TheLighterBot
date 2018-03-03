@@ -5,6 +5,7 @@ import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.MessageEmbed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.Paginator;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorBuilder;
@@ -21,16 +22,21 @@ import java.util.stream.Collectors;
 public class HelpCommand extends Command implements Paginator<MessageEmbed> {
     private static final Logger log = LoggerFactory.getLogger(HelpCommand.class);
 
+    public HelpCommand() {
+        super(new CommandAliasCollectionBuilder()
+                .addAliasPart("help", "h"));
+    }
+
     @Override
     void execute() {
         LinkedList<String> commandTextList = new LinkedList<>();
 
         l.getCommandParser().getCommands().stream()
-                .sorted((cmd1, cmd2) -> cmd1.getAliases()[0].compareToIgnoreCase(cmd2.getAliases()[0]))
+                .sorted((cmd1, cmd2) -> cmd1.getAliasCollection().asArray()[0].compareToIgnoreCase(cmd2.getAliasCollection().asArray()[0]))
                 .forEach(cmd -> {
             String sb =
-                    String.format("**%s** - %s", l.getDiscordController().getCommandPrefix() + cmd.getAliases()[0], cmd.getDescription()) +
-                    String.format("\n>>|%s", cmd.getAliases().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getAliases()).skip(1).sorted(String::compareToIgnoreCase).map(a -> l.getDiscordController().getCommandPrefix() + a).collect(Collectors.toList())) +
+                    String.format("**%s** - %s", l.getDiscordController().getCommandPrefix() + cmd.getAliasCollection().asArray()[0], cmd.getDescription()) +
+                    String.format("\n>>|%s", cmd.getAliasCollection().asArray().length == 1 ? "None" : String.join(", ", Arrays.stream(cmd.getAliasCollection().asArray()).skip(1).sorted(String::compareToIgnoreCase).map(a -> l.getDiscordController().getCommandPrefix() + a).collect(Collectors.toList())) +
                     String.format("\n>>|%s", cmd.getUsage().replace("{}", l.getDiscordController().getCommandPrefix())) +
                     String.format("\n>>|%s", cmd.getPermissionsRequired().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getPermissionsRequired()).map(Enum::name).collect(Collectors.toList()))));
 
@@ -42,11 +48,6 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
                         .setContent(commandTextList)
                         .setPlaceholderMessage("Requesting help...")
                         .build());
-    }
-
-    @Override
-    String[] getAliases() {
-        return new String[] {"help", "h"};
     }
 
     @Override

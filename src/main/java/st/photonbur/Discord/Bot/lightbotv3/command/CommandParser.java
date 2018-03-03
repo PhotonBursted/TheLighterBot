@@ -85,11 +85,7 @@ public class CommandParser extends ListenerAdapter {
         // Try to find if a command was referenced, and if there was any, find which
         Command targetCmd = commands.stream()
                 .filter(cmd -> cmd.messageIsCommand(input))
-                .sorted((cmd1, cmd2) -> {
-                    Double nParts1 = Arrays.stream(cmd1.getAliases()).mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
-                    Double nParts2 = Arrays.stream(cmd2.getAliases()).mapToInt(alias -> alias.split(SEP_SPACE).length).average().orElse(0);
-                    return nParts2.compareTo(nParts1);
-                })
+                .sorted((cmd1, cmd2) -> Integer.compare(cmd2.getAliasCollection().getAliasLength(), cmd1.getAliasCollection().getAliasLength()))
                 .findFirst().orElse(null);
 
         // If a command was referenced, save the event and execute the command
