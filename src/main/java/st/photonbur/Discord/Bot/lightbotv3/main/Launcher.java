@@ -8,9 +8,6 @@ import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
-import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputListener;
-import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputEvent;
-import st.photonbur.Discord.Bot.lightbotv3.misc.console.ConsoleInputReader;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -21,18 +18,17 @@ import java.util.Scanner;
  * General manager of all parts of the bot.
  * Makes sure that everything is handled properly, from starting up to shutting down.
  */
-public class Launcher implements ConsoleInputListener {
+public class Launcher {
     private static final Logger log = LoggerFactory.getLogger(Launcher.class);
 
     public static final String VERSION = "3.1.3";
 
     private static Launcher instance;
-    private static ConsoleInputReader consoleInputReader = new ConsoleInputReader(System.in, System.out);
-    private Properties props = new Properties();
+    private final Properties props = new Properties();
     private Scanner sc;
 
     private Launcher() {
-        consoleInputReader.addListener(this);
+
     }
 
     /**
@@ -84,18 +80,6 @@ public class Launcher implements ConsoleInputListener {
         Launcher.getInstance().run();
     }
 
-    @Override
-    public void onConsoleInput(ConsoleInputEvent ev) {
-        String input = ev.getInput();
-
-        if (input.equals("exit")) {
-            sc.close();
-            shutdown();
-        } else if (input.equals("reload")) {
-            getFileController().readAllGuilds();
-        }
-    }
-
     /**
      * Starts up the bot and every component necessary to work properly.
      */
@@ -107,8 +91,15 @@ public class Launcher implements ConsoleInputListener {
 
             ChannelController.getInstance(this);
             DiscordController.getInstance(this, props.getProperty("token"), props.getProperty("prefix"));
+            FileController.getInstance(
+                    props.getProperty("dbhost"),
+                    props.getProperty("dbport"),
+                    props.getProperty("dbname"),
+                    props.getProperty("dbuser"),
+                    props.getProperty("dbpass")
+            );
 
-            getFileController().readAllGuilds();
+            getFileController().loadEverything();
         } catch (IOException ex) {
             log.error("Something went wrong loading the necessary settings to launch.", ex);
         } finally {
@@ -128,6 +119,7 @@ public class Launcher implements ConsoleInputListener {
                 new SetCategoryCommand(),
                 new TemporaryChannelCommand(),
                 new TemporaryChannelSizeCommand(),
+                new TemporaryChannelTopicCommand(),
                 new UnlinkChannelCommand(),
                 new UnpermanentChannelCommand(),
                 new WhitelistCommand()
@@ -135,7 +127,16 @@ public class Launcher implements ConsoleInputListener {
 
         sc = new Scanner(System.in);
         //noinspection StatementWithEmptyBody
-        while (sc.hasNextLine()) { }
+        while (sc.hasNextLine()) {
+            String input = sc.nextLine();
+
+            if (input.equals("exit")) {
+                sc.close();
+                shutdown();
+            } else if (input.equals("reload")) {
+                getFileController().loadEverything();
+            }
+        }
     }
 
     /**
@@ -147,6 +148,7 @@ public class Launcher implements ConsoleInputListener {
 
         sc.close();
         getBot().shutdown();
+        getFileController().shutdown();
 
         System.exit(0);
     }
