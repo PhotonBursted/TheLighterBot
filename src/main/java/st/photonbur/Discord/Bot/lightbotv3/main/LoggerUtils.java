@@ -7,10 +7,6 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /**
