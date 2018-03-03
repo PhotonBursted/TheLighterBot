@@ -20,13 +20,13 @@ public class SelectorImpl<T> extends Menu {
     /**
      * The parent of the menu. This is the instance which is responsible for actually doing something with anything happening within the menu.
      */
-    private Selector parent;
+    private final Selector<T> parent;
     /**
      * The options available within this menu.
      */
-    private LinkedHashMap<String, T> options;
+    private final LinkedHashMap<String, T> options;
 
-    SelectorImpl(Control[] controls, LinkedHashMap<String, T> options, Selector parent, Message message) {
+    SelectorImpl(Control[] controls, LinkedHashMap<String, T> options, Selector<T> parent, Message message) {
         super(message, controls);
         this.options = options;
         this.parent = parent;

@@ -12,7 +12,7 @@ import java.util.LinkedHashMap;
  *
  * @param <T> The type of the instances which are to be selected from
  */
-public class SelectorBuilder<T> extends MenuBuilder<Selector> {
+public class SelectorBuilder<T> extends MenuBuilder<Selector<T>> {
     /**
      * The options the selector will have.
      *
@@ -21,7 +21,7 @@ public class SelectorBuilder<T> extends MenuBuilder<Selector> {
      */
     private LinkedHashMap<String, T> options;
 
-    public SelectorBuilder(Selector parent) {
+    public SelectorBuilder(Selector<T> parent) {
         super(parent);
 
         // Sets the controls the menu will use
