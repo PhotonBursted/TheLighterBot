@@ -13,7 +13,7 @@ public enum MessageContent {
     INVALID_INPUT("The input was invalid: %s"),
     NOT_IN_VOICE_CHANNEL("It is required to be in a voice channel in order to execute this command!"),
     PERMISSIONS_REQUIRED_GENERAL("You lack %s permissions to do this!"),
-    PERMISSIONS_REQUIRED_PERMANENT_CHANNEL_SIZE_CHANGE("MANAGE_CHANNEL permissions are required to change the size of permanent voice channels!");
+    PERMISSIONS_REQUIRED("%s permissions are required to %s!");
 
     MessageContent(String message) {
         this.message = message;
