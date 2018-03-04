@@ -299,7 +299,7 @@ public class ChannelController extends ListenerAdapter {
                 }
                 break;
             case MOVE:
-                if (tcs[0].equals(tcs[1])) {
+                if (Objects.equals(tcs[0], tcs[1])) {
                     if (isLinked(vcs[0])) {
                         tcs[0].sendMessage("**" + member.getEffectiveName() + "** moved from **" + vcs[0].getName() + "** to **" + vcs[1].getName() + "**").queue();
                     }
