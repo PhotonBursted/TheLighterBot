@@ -279,8 +279,8 @@ public class ChannelController extends ListenerAdapter {
      */
     private void informUserAbout(EventType type, Member member, VoiceChannel... vcs) {
         TextChannel[] tcs = new TextChannel[] {
-                linkedChannels.getForVoiceChannel(vcs[0]),
-                linkedChannels.getForVoiceChannel(vcs[1])
+                vcs.length > 0 ? linkedChannels.getForVoiceChannel(vcs[0]) : null,
+                vcs.length > 1 ? linkedChannels.getForVoiceChannel(vcs[1]) : null
         };
 
         switch (type) {
