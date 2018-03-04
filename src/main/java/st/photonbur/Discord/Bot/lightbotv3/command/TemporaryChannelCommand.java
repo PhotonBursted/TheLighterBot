@@ -39,9 +39,6 @@ public class TemporaryChannelCommand extends Command {
                                 // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
                                 l.getChannelController().getLinkedChannels().put(tc, vc);
                                 l.getChannelController().setNewChannelTimeout(vc);
-
-                                // Update the configs regarding the affected guild
-                                l.getFileController().applyLinkAddition(tc, vc);
                             }));
         }
     }

@@ -39,7 +39,6 @@ public class UnlinkChannelCommand extends Command {
                 l.getDiscordController().sendMessage(ev,
                         String.format("Successfully unlinked **%s** from **%s**!", vc.getName(), tc.getAsMention()),
                         DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().applyLinkDeletion(tc, vc);
             } else {
                 handleError(MessageContent.CHANNEL_NOT_LINKED);
             }
