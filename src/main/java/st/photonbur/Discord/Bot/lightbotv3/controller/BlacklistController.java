@@ -2,7 +2,11 @@ package st.photonbur.Discord.Bot.lightbotv3.controller;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
+import st.photonbur.Discord.Bot.lightbotv3.entity.EntityConverter;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableRole;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableUser;
+import st.photonbur.Discord.Bot.lightbotv3.entity.permissible.PermissibleEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
@@ -18,7 +22,7 @@ public class BlacklistController {
      * Enum holding the types of actions which can be applied to the blacklist database.
      */
     private enum Action {
-        BLACKLIST(), WHITELIST()
+        BLACKLIST, WHITELIST
     }
 
     /**
@@ -66,7 +70,7 @@ public class BlacklistController {
     }
 
     /**
-     * Blacklists a {@link User user} or {@link Role role} for a certain guild.
+     * Blacklists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to
      * @param entity The user or role to target
@@ -77,7 +81,7 @@ public class BlacklistController {
     }
 
     /**
-     * Blacklists a {@link User user} or {@link Role role} for a certain guild.
+     * Blacklists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to
      * @param entity The user or role to target
@@ -85,9 +89,12 @@ public class BlacklistController {
      */
     public String blacklist(Guild g, BannableEntity entity, boolean writeToDb) {
         blacklist.putIfAbsent(g, new HashSet<>());
-        blacklist.get(g).add(entity);
+        blacklist.get(g).add(entity.get());
 
-        updateChannelPermOverrides(Action.BLACKLIST, g, entity);
+        updateChannelPermOverrides(Action.BLACKLIST, g,
+                entity.isOfClass(User.class) ?
+                        EntityConverter.toPermissible((BannableUser) entity, g) :
+                        EntityConverter.toPermissible((BannableRole) entity));
 
         if (writeToDb) {
             l.getFileController().applyBlacklistAddition(g, entity);
@@ -170,7 +177,13 @@ public class BlacklistController {
                                 item.getId().equals(m.getUser().getId()));
     }
 
-    private <T extends ISnowflake> void updateChannelPermOverrides(Action action, Guild guild, T entity) {
+    private void updateChannelPermOverrides(Action action, Guild g, BannableEntity entity) {
+        updateChannelPermOverrides(action, g,entity.isOfClass(User.class) ?
+                EntityConverter.toPermissible((BannableUser) entity, g) :
+                EntityConverter.toPermissible((BannableRole) entity));
+    }
+
+    private void updateChannelPermOverrides(Action action, Guild guild, PermissibleEntity entity) {
         l.getChannelController().getLinkedChannels().entrySet().stream()
                 .filter(entry -> entry.getKey().getGuild().equals(guild))
                 .forEach(entry -> {
@@ -247,7 +260,7 @@ public class BlacklistController {
     }
 
     /**
-     * Whitelists a {@link User user} or {@link Role role} for a certain guild.
+     * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to remove the blacklist to
      * @param entity The wrapped representation of the Discord entity to target
@@ -258,7 +271,7 @@ public class BlacklistController {
     }
 
     /**
-     * Whitelists a {@link User user} or {@link Role role} for a certain guild.
+     * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to remove the blacklist to
      * @param entity The wrapped representation of the Discord entity to target
@@ -266,7 +279,7 @@ public class BlacklistController {
      * @return A response string to print into the logs
      */
     String whitelist(Guild g, BannableEntity entity, boolean writeToDb) {
-        blacklist.get(g).remove(entity);
+        blacklist.get(g).remove(entity.get());
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);
 

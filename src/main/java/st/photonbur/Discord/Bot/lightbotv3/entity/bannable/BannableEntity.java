@@ -9,10 +9,10 @@ import java.util.function.Function;
  * Class used to better handle entities of which the access to the bot can be limited.
  */
 public class BannableEntity<T extends ISnowflake> implements ISnowflake {
-    private final T entity;
-    protected Launcher l = Launcher.getInstance();
+    protected final T entity;
+    protected static final Launcher l = Launcher.getInstance();
 
-    public BannableEntity(T entity) {
+    BannableEntity(T entity) {
         this.entity = entity;
     }
 
@@ -28,16 +28,12 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
         return entity;
     }
 
-    public String getClassName() {
-        return entity.getClass().getSimpleName();
+    public boolean isOfClass(Class clazz) {
+        return entity.getClass() == clazz;
     }
 
     @Override
     public long getIdLong() {
         return entity.getIdLong();
-    }
-
-    public boolean isOfClass(Class clazz) {
-        return entity.getClass() == clazz;
     }
 }

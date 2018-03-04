@@ -2,6 +2,7 @@ package st.photonbur.Discord.Bot.lightbotv3.misc;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
+import st.photonbur.Discord.Bot.lightbotv3.entity.permissible.PermissibleEntity;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -32,15 +33,15 @@ public class Utils {
      * Gets the permission override for the channel, whether it exists or not.
      *
      * @param c        The channel to look in
-     * @param t        The entity to find the override for
+     * @param entity   The entity to find the override for
      * @param callback The action to carry out once the override has been found
-     * @param <T>      The type of the entity to find the override for
      */
-    public static <T extends ISnowflake> void getPO(Channel c, T t, Consumer<PermissionOverride> callback) {
-        if (t instanceof Role) {
-            getPO(c, (Role) t, callback);
-        } else if (t instanceof User) {
-            getPO(c, c.getGuild().getMember((User) t), callback);
+    public static void getPO(Channel c, PermissibleEntity entity, Consumer<PermissionOverride> callback) {
+        if (entity.isOfClass(Member.class)) {
+            getPO(c, ((Member) entity.get()), callback);
+        }
+        if (entity.isOfClass(Role.class)) {
+            getPO(c, ((Role) entity.get()), callback);
         }
     }
 
