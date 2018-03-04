@@ -36,7 +36,7 @@ public class PaginatorBuilder<T> extends MenuBuilder<Paginator<T>> {
     }
 
     @Override
-    public void buildImpl() {
+    protected void buildImpl() {
         Consumer<Message> createAction = message -> new PaginatorImpl(controls, content, parent, message);
 
         if (placeholderMessage != null) {
