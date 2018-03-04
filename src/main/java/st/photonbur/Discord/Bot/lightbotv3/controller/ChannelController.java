@@ -13,11 +13,15 @@ import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
-import st.photonbur.Discord.Bot.lightbotv3.misc.ChannelMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
+import st.photonbur.Discord.Bot.lightbotv3.misc.channelmap.LinkedChannelMap;
+import st.photonbur.Discord.Bot.lightbotv3.misc.channelmap.PermanentChannelMap;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,11 +48,11 @@ public class ChannelController extends ListenerAdapter {
      * Keeps track of channels which are linked to each other.
      * This "linkage" is referring to the displaying of join, leave and move actions in the text channel.
      */
-    private final ChannelMap linkedChannels;
+    private final LinkedChannelMap linkedChannels;
     /**
      * Keeps track of pairs of channels which should not be removed when empty.
      */
-    private final ChannelMap permChannels;
+    private final PermanentChannelMap permChannels;
 
     /**
      * Instance of the launcher for easy access to other classes
@@ -61,8 +65,8 @@ public class ChannelController extends ListenerAdapter {
         this.l = l;
 
         categories = new HashMap<>();
-        linkedChannels = new ChannelMap("linked");
-        permChannels = new ChannelMap("permanent");
+        linkedChannels = new LinkedChannelMap();
+        permChannels = new PermanentChannelMap();
         timeoutCandidates = new HashMap<>();
     }
 
@@ -258,14 +262,14 @@ public class ChannelController extends ListenerAdapter {
     /**
      * @return The pairs of channels linked to each other.
      */
-    public ChannelMap getLinkedChannels() {
+    public LinkedChannelMap getLinkedChannels() {
         return linkedChannels;
     }
 
     /**
      * @return The pairs of channels which should be kept, even when left empty.
      */
-    public ChannelMap getPermChannels() {
+    public PermanentChannelMap getPermChannels() {
         return permChannels;
     }
 
