@@ -27,7 +27,8 @@ public class ChannelMap extends LinkedHashMap<TextChannel, Set<VoiceChannel>> {
         if (keySet().contains(key)) {
             get(key).add(value);
         } else {
-            put(key, Collections.singleton(value));
+            put(key, new HashSet<>());
+            put(key, value);
         }
     }
 
