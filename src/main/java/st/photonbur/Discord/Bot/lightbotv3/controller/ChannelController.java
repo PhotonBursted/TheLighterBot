@@ -12,10 +12,11 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
-import st.photonbur.Discord.Bot.lightbotv3.misc.channelmap.LinkedChannelMap;
-import st.photonbur.Discord.Bot.lightbotv3.misc.channelmap.PermanentChannelMap;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.channel.LinkedChannelMap;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.channel.PermanentChannelMap;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChannelController extends ListenerAdapter {
@@ -83,22 +85,42 @@ public class ChannelController extends ListenerAdapter {
     }
 
     /**
-     * Applies the blacklist to a certain channel right before it is constructed.
+     * Applies the properties of an accesslist to a certain channel right before it is constructed.
      *
      * @param g      The guild the channel is in
-     * @param action The action representing the channel to apply the blacklist to
+     * @param action The action representing the channel to apply the accesslist to
      * @param perms  The permissions to apply
      */
-    private void applyBlacklist(Guild g, ChannelAction action, Permission... perms) {
+    private void applyAccessList(Guild g, ChannelAction action, Permission... perms) {
         // Figures out the blacklist present in this guild
-        Set<? extends ISnowflake> blacklist = l.getBlacklistController().getForGuild(g);
+        Set<BannableEntity> blacklist = l.getAccesslistController().getBlacklistForGuild(g);
+        Set<BannableEntity> whitelist = l.getAccesslistController().getWhitelistForGuild(g);
+
+        if (blacklist != null && whitelist != null) {
+            blacklist.removeAll(l.getAccesslistController().getWhitelistForGuild(g));
+            whitelist.removeAll(l.getAccesslistController().getBlacklistForGuild(g));
+
+            log.info("bl: " + blacklist.stream().map(e -> e.get().getId()).collect(Collectors.joining(", ")) + "\n" +
+                     "wl: " + whitelist.stream().map(e -> e.get().getId()).collect(Collectors.joining(", ")));
+        }
+
+
         if (blacklist != null) {
-            // If applicable, deny people their access of this category
             blacklist.forEach(item -> {
-                if (item instanceof Role) {
-                    action.addPermissionOverride((Role) item, 0L, Permission.getRaw(perms));
-                } else if (item instanceof User) {
-                    action.addPermissionOverride(g.getMember((User) item), 0L, Permission.getRaw(perms));
+                if (item.isOfClass(Role.class)) {
+                    action.addPermissionOverride((Role) item.get(), 0L, Permission.getRaw(perms));
+                } else if (item.isOfClass(User.class)) {
+                    action.addPermissionOverride(g.getMember((User) item.get()), 0L, Permission.getRaw(perms));
+                }
+            });
+        }
+
+        if (whitelist != null) {
+            whitelist.forEach(item -> {
+                if (item.isOfClass(Role.class)) {
+                    action.addPermissionOverride((Role) item.get(), Permission.getRaw(perms), 0L);
+                } else if (item.isOfClass(User.class)) {
+                    action.addPermissionOverride(g.getMember((User) item.get()), Permission.getRaw(perms), 0L);
                 }
             });
         }
@@ -127,7 +149,7 @@ public class ChannelController extends ListenerAdapter {
         // Creates an intermediate action which only contains the name of the new category.
         ChannelAction cAction = g.getController().createCategory("Temp: " + name);
 
-        applyBlacklist(g, cAction, Permission.MESSAGE_READ);
+        applyAccessList(g, cAction, Permission.MESSAGE_READ);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
@@ -159,7 +181,7 @@ public class ChannelController extends ListenerAdapter {
                         0
                 );
 
-        applyBlacklist(ev.getGuild(), tcAction, Permission.MESSAGE_READ);
+        applyAccessList(ev.getGuild(), tcAction, Permission.MESSAGE_READ);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
@@ -187,7 +209,7 @@ public class ChannelController extends ListenerAdapter {
                         Permission.getRaw(Permission.VIEW_CHANNEL),
                         0);
 
-        applyBlacklist(ev.getGuild(), vcAction, Permission.VIEW_CHANNEL);
+        applyAccessList(ev.getGuild(), vcAction, Permission.VIEW_CHANNEL);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
@@ -408,11 +430,11 @@ public class ChannelController extends ListenerAdapter {
         VoiceChannel vc = ev.getChannel();
 
         if (isPermanent(vc)) {
-            permChannels.remove(vc);
+            permChannels.removeMerging(permChannels.getForVoiceChannel(vc), vc);
         }
 
         if (isLinked(vc)) {
-            linkedChannels.remove(vc);
+            linkedChannels.removeMerging(vc);
         }
     }
 
@@ -431,13 +453,13 @@ public class ChannelController extends ListenerAdapter {
 
         if (isPermanent(tc) && vcs != null) {
             for (VoiceChannel vc : vcs) {
-                permChannels.remove(vc);
+                permChannels.removeMerging(vc);
             }
         }
 
         if (isLinked(tc) && vcs != null) {
             for (VoiceChannel vc : vcs) {
-                linkedChannels.remove(vc);
+                linkedChannels.removeMerging(vc);
             }
         }
     }
