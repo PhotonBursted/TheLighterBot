@@ -37,7 +37,7 @@ public class TemporaryChannelCommand extends Command {
                     vc -> l.getChannelController().createTempTextChannel(ev, channelName, parent,
                             tc -> {
                                 // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
-                                l.getChannelController().getLinkedChannels().put(tc, vc);
+                                l.getChannelController().getLinkedChannels().putMerging(tc, vc);
                                 l.getChannelController().setNewChannelTimeout(vc);
                             }));
         }

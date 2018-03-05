@@ -185,8 +185,8 @@ abstract class AccesslistAdditionCommand extends Command implements Selector<Ban
         l.getDiscordController().sendMessage(ev,
                 String.format("Successfully %sed %s **%s**!",
                         actionName,
-                        target.get().getClass().getSimpleName().toLowerCase(),
-                        target.isOfClass(User.class) ? Utils.userAsString((User) (target.get())) :
+                        target.get().getClass().getSimpleName().toLowerCase().replace("impl", ""),
+                        target.isOfClass(User.class) ? Utils.userAsString((User) target.get()) :
                         target.isOfClass(Role.class) ? ((Role) target.get()).getName() : ""),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }

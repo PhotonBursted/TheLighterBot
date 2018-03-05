@@ -22,6 +22,8 @@ public class FileController {
     private static FileController instance;
     private final Launcher l;
 
+    private static boolean writeToDb;
+
     private FileController(String dbUrl, String dbPort, String dbName, String dbUser, String dbPass) {
         this.l = Launcher.getInstance();
 
@@ -30,6 +32,10 @@ public class FileController {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static boolean shouldWriteToDb() {
+        return writeToDb;
     }
 
     /**
@@ -57,26 +63,28 @@ public class FileController {
     }
 
     private void applyAccessListAddition(String tableName, Guild g, BannableEntity entity) throws SQLException {
-        executeChangeQuery("INSERT INTO ? VALUES (?, ?, ?)", stmt -> {
+        executeChangeQuery("INSERT INTO \"" + tableName + "\" VALUES (?, ?, ?)", stmt -> {
             try {
-                stmt.setString(1, tableName);
-                stmt.setLong(2, g.getIdLong());
-                stmt.setLong(3, entity.getIdLong());
-                stmt.setString(4, entity.get().getClass().getSimpleName().toLowerCase());
+                stmt.setLong(1, g.getIdLong());
+                stmt.setLong(2, entity.getIdLong());
+                stmt.setString(3, entity.get().getClass().getSimpleName().toLowerCase().replace("impl", ""));
             } catch (SQLException ex) {
-                log.error("Something went wrong when setting parameters for an access list addition", ex);
+                log.error(String.format("Something went wrong when setting parameters for an access list addition:\n" +
+                        " - Guild: %d\n" +
+                        " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
             }
         });
     }
 
     private void applyAccessListDeletion(String tableName, Guild g, BannableEntity entity) throws SQLException {
-        executeChangeQuery("DELETE FROM ? WHERE server_id = ? AND entity_id = ?", stmt -> {
+        executeChangeQuery("DELETE FROM \"" + tableName + "\" WHERE server_id = ? AND entity_id = ?", stmt -> {
             try {
-                stmt.setString(1, tableName);
-                stmt.setLong(2, g.getIdLong());
-                stmt.setLong(3, entity.getIdLong());
+                stmt.setLong(1, g.getIdLong());
+                stmt.setLong(2, entity.getIdLong());
             } catch (SQLException ex) {
-                log.error("Something went wrong when setting parameters for an access list addition", ex);
+                log.error(String.format("Something went wrong when setting parameters for an access list addition:\n" +
+                        " - Guild: %d\n" +
+                        " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
             }
         });
     }
@@ -85,7 +93,9 @@ public class FileController {
         try {
             applyAccessListAddition("Blacklists", g, entity);
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a blacklist addition", ex);
+            log.error(String.format("Something went wrong applying a blacklist addition:\n" +
+                    " - Guild: %d\n" +
+                    " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
         }
     }
 
@@ -93,7 +103,9 @@ public class FileController {
         try {
             applyAccessListDeletion("Blacklists", g, entity);
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a blacklist deletion", ex);
+            log.error(String.format("Something went wrong applying a blacklist deletion:\n" +
+                    " - Guild: %d\n" +
+                    " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
         }
     }
 
@@ -104,11 +116,15 @@ public class FileController {
                     stmt.setLong(1, g.getIdLong());
                     stmt.setLong(2, c.getIdLong());
                 } catch (SQLException ex) {
-                    log.error("Something went wrong when setting parameters for a default category addition", ex);
+                    log.error(String.format("Something went wrong when setting parameters for a default category addition:\n" +
+                            " - Guild: %d\n" +
+                            " - Category: %s (%d)", g.getIdLong(), c.getName(), c.getIdLong()), ex);
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a default category addition", ex);
+            log.error(String.format("Something went wrong applying a default category addition:\n" +
+                    " - Guild: %d\n" +
+                    " - Category: %s (%d)", g.getIdLong(), c.getName(), c.getIdLong()), ex);
         }
     }
 
@@ -118,11 +134,13 @@ public class FileController {
                 try {
                     stmt.setLong(1, g.getIdLong());
                 } catch (SQLException ex) {
-                    log.error("Something went wrong when setting parameters for a default category deletion", ex);
+                    log.error(String.format("Something went wrong when setting parameters for a default category deletion:\n" +
+                            " - Guild: %d", g.getIdLong()), ex);
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a default category deletion", ex);
+            log.error(String.format("Something went wrong applying a default category deletion:\n" +
+                    " - Guild: %d", g.getIdLong()), ex);
         }
     }
 
@@ -133,11 +151,15 @@ public class FileController {
                     stmt.setLong(1, tc.getIdLong());
                     stmt.setLong(2, vc.getIdLong());
                 } catch (SQLException ex) {
-                    log.error("Something went wrong when setting parameters for a linked channel addition", ex);
+                    log.error(String.format("Something went wrong setting parameters for a linked channel addition:\n" +
+                            " - TC: %s (%d)\n" +
+                            " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a linked channel addition", ex);
+            log.error(String.format("Something went wrong applying a linked channel addition:\n" +
+                    " - TC: %s (%d)\n" +
+                    " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
         }
     }
 
@@ -148,11 +170,15 @@ public class FileController {
                     stmt.setLong(1, tc.getIdLong());
                     stmt.setLong(2, vc.getIdLong());
                 } catch (SQLException ex) {
-                    log.error("Something went wrong when setting parameters for a linked channel deletion", ex);
+                    log.error(String.format("Something went wrong setting parameters for a linked channel deletion:\n" +
+                            " - TC: %s (%d)\n" +
+                            " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a linked channel deletion", ex);
+            log.error(String.format("Something went wrong applying a linked channel deletion:\n" +
+                    " - TC: %s (%d)\n" +
+                    " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
         }
     }
 
@@ -163,11 +189,15 @@ public class FileController {
                     stmt.setLong(1, tc.getIdLong());
                     stmt.setLong(2, vc.getIdLong());
                 } catch (SQLException ex) {
-                    log.error("Something went wrong when setting parameters for a permanent channel addition", ex);
+                    log.error(String.format("Something went wrong setting parameters for a permanent channel addition:\n" +
+                            " - TC: %s (%d)\n" +
+                            " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a permanent channel addition", ex);
+            log.error(String.format("Something went wrong applying a permanent channel addition:\n" +
+                    " - TC: %s (%d)\n" +
+                    " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
         }
     }
 
@@ -182,7 +212,9 @@ public class FileController {
                 }
             });
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a permanent channel deletion", ex);
+            log.error(String.format("Something went wrong applying a permanent channel deletion:\n" +
+                    " - TC: %s (%d)\n" +
+                    " - VC: %s (%d)", tc.getName(), tc.getIdLong(), vc.getName(), vc.getIdLong()), ex);
         }
     }
 
@@ -190,7 +222,9 @@ public class FileController {
         try {
             applyAccessListAddition("Whitelists", g, entity);
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a whitelist addition", ex);
+            log.error(String.format("Something went wrong applying a whitelist addition:\n" +
+                    " - Guild: %d\n" +
+                    " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
         }
     }
 
@@ -198,22 +232,29 @@ public class FileController {
         try {
             applyAccessListDeletion("Whitelists", g, entity);
         } catch (SQLException ex) {
-            log.error("Something went wrong applying a whitelist deletion", ex);
+            log.error(String.format("Something went wrong applying a whitelist deletion:\n" +
+                    " - Guild: %d\n" +
+                    " - Entity: %d (%s)", g.getIdLong(), entity.getIdLong(), entity.get().getClass().getSimpleName()), ex);
         }
     }
 
     private void executeChangeQuery(String sql, Consumer<PreparedStatement> statementConsumer) throws SQLException {
-        PreparedStatement query = conn.prepareStatement(sql);
-        statementConsumer.accept(query);
+        if (shouldWriteToDb()) {
+            PreparedStatement query = conn.prepareStatement(sql);
+            statementConsumer.accept(query);
 
-        query.execute();
-        query.close();
+            query.execute();
+            query.close();
+        }
     }
 
     public void loadEverything() {
         log.info("Loading all guild data...");
 
+        // Disable writing to the database as just loading is required
+        writeToDb = false;
         loadAllDataFromDatabase();
+        writeToDb = true;
 
         log.info(String.format("Done processing guild files.\n\nFound %d pairs of permanent and %d pairs of linked channels.",
                 l.getChannelController().getPermChannels().size(),
@@ -250,10 +291,10 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getAccesslistController().blacklist(g, new BannableRole(entityId), false);
+                                l.getAccesslistController().blacklist(g, new BannableRole(entityId));
                                 break;
                             case "user":
-                                l.getAccesslistController().blacklist(g, new BannableUser(entityId), false);
+                                l.getAccesslistController().blacklist(g, new BannableUser(entityId));
                                 break;
                             default:
                         }
@@ -305,7 +346,7 @@ public class FileController {
                         VoiceChannel vc = l.getBot().getVoiceChannelById(result.getLong("vc_id"));
 
                         if (tc != null && vc != null) {
-                            l.getChannelController().getLinkedChannels().put(tc, vc);
+                            l.getChannelController().getLinkedChannels().putMerging(tc, vc);
                         }
                     } catch (SQLException ex) {
                         log.error("Something went wrong retrieving the linked channels", ex);
@@ -323,7 +364,7 @@ public class FileController {
                         VoiceChannel vc = l.getBot().getVoiceChannelById(result.getLong("vc_id"));
 
                         if (tc != null && vc != null) {
-                            l.getChannelController().getPermChannels().put(tc, vc);
+                            l.getChannelController().getPermChannels().putMerging(tc, vc);
                         }
                     } catch (SQLException ex) {
                         log.error("Something went wrong retrieving the permanent channels", ex);
@@ -345,10 +386,10 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getAccesslistController().whitelist(g, new BannableRole(entityId), false);
+                                l.getAccesslistController().whitelist(g, new BannableRole(entityId));
                                 break;
                             case "user":
-                                l.getAccesslistController().whitelist(g, new BannableUser(entityId), false);
+                                l.getAccesslistController().whitelist(g, new BannableUser(entityId));
                                 break;
                             default:
                         }

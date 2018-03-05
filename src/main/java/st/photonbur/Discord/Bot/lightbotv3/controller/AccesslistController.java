@@ -10,8 +10,12 @@ import st.photonbur.Discord.Bot.lightbotv3.entity.permissible.PermissibleEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.StringUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.accesslist.BlacklistMap;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.accesslist.WhitelistMap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Maintains the access list. The access list contains users and roles who are not or specifically allowed to interact with the bot.
@@ -29,12 +33,12 @@ public class AccesslistController {
     /**
      * Holds the blacklisted {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entities} per guild.
      */
-    private final HashMap<Guild, Set<BannableEntity>> blacklist;
+    private final BlacklistMap blacklist;
 
     /**
      * Holds the whitelisted {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entities} per guild.
      */
-    private final HashMap<Guild, Set<BannableEntity>> whitelist;
+    private final WhitelistMap whitelist;
 
     private final static String REASON = "The server's blacklist changed and required a permission update";
 
@@ -45,8 +49,8 @@ public class AccesslistController {
     private static AccesslistController instance;
 
     private AccesslistController() {
-        blacklist = new HashMap<>();
-        whitelist = new HashMap<>();
+        blacklist = new BlacklistMap();
+        whitelist = new WhitelistMap();
 
         l = Launcher.getInstance();
     }
@@ -85,33 +89,13 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String blacklist(Guild g, BannableEntity entity) {
-        return blacklist(g, entity, true);
-    }
-
-    /**
-     * Blacklists a {@link BannableEntity bannable entity} for a certain guild.
-     *
-     * @param g      The guild to apply the blacklist to
-     * @param entity The bannable entity to target
-     * @return A response string to print into the logs
-     */
-    public String blacklist(Guild g, BannableEntity entity, boolean writeToDb) {
-        if (whitelist.containsKey(g)) {
-            whitelist.get(g).remove(entity);
-        }
-
-        blacklist.putIfAbsent(g, new HashSet<>());
-        blacklist.get(g).add(entity);
+        blacklist.putMerging(g, entity);
+        whitelist.removeMerging(g, entity);
 
         updateChannelPermOverrides(Action.BLACKLIST, g,
                 entity.isOfClass(User.class) ?
                         EntityConverter.toPermissible((BannableUser) entity, g) :
                         EntityConverter.toPermissible((BannableRole) entity));
-
-        if (writeToDb) {
-            l.getFileController().applyBlacklistAddition(g, entity);
-            l.getFileController().applyWhitelistDeletion(g, entity);
-        }
 
         return confirmAction(Action.BLACKLIST, g, entity);
     }
@@ -124,22 +108,22 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     private static String confirmAction(Action action, Guild g, BannableEntity entity) {
-        String entityType = entity.getClass().getSimpleName().toLowerCase();
+        String entityType = entity.get().getClass().getSimpleName().toLowerCase().replace("impl", "");
 
-        return String.format("%sed a %s in guild \"%s:\"\n" +
+        return String.format("%sed a %s in guild \"%s\":\n" +
                         " - Guild ID: %s\n" +
                         " - %s ID: %s (%s)",
                 StringUtils.capitalize(action.name().toLowerCase()),
                 entityType, g.getName(), g.getIdLong(),
                 StringUtils.capitalize(entityType), entity.getIdLong(),
-                entity.isOfClass(User.class) ? Utils.userAsString((User) entity) : g.getRoleById(entity.getId()).getName());
+                entity.isOfClass(User.class) ? Utils.userAsString((User) entity.get()) : g.getRoleById(entity.getId()).getName());
     }
 
-    public Set<? extends ISnowflake> getBlacklistForGuild(Guild g) {
+    public Set<BannableEntity> getBlacklistForGuild(Guild g) {
         return blacklist.get(g);
     }
 
-    public Set<? extends ISnowflake> getWhitelistForGuild(Guild g) {
+    public Set<BannableEntity> getWhitelistForGuild(Guild g) {
         return whitelist.get(g);
     }
 
@@ -156,7 +140,7 @@ public class AccesslistController {
      * @see AccesslistController#isEffectivelyBlacklisted(Member)
      * @see AccesslistController#isBlacklisted(Role)
      */
-    public boolean isBlacklisted(Member m) {
+    private boolean isBlacklisted(Member m) {
         return isContainedWithinAccessList(new BannableUser(m.getUser()), blacklist.get(m.getGuild()));
     }
 
@@ -313,13 +297,13 @@ public class AccesslistController {
                         PermissionOverride poT = null, poC = null;
                         List<PermissionOverride> poVs = new ArrayList<>();
 
-                        if (entity instanceof Role) {
+                        if (entity.isOfClass(Role.class)) {
                             poT = entry.getKey().getPermissionOverride((Role) entity);
 
                             for (VoiceChannel vc : entry.getValue()) {
                                 poVs.add(vc.getPermissionOverride((Role) entity));
                             }
-                        } else if (entity instanceof User) {
+                        } else if (entity.isOfClass(User.class)) {
                             poT = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
 
                             for (VoiceChannel vc : entry.getValue()) {
@@ -338,9 +322,9 @@ public class AccesslistController {
                         }
 
                         if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
-                            if (entity instanceof Role) {
+                            if (entity.isOfClass(Role.class)) {
                                 poC = entry.getKey().getParent().getPermissionOverride((Role) entity);
-                            } else if (entity instanceof User) {
+                            } else if (entity.isOfClass(User.class)) {
                                 poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity));
                             }
 
@@ -360,31 +344,10 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String whitelist(Guild g, BannableEntity entity) {
-        return whitelist(g, entity, true);
-    }
-
-    /**
-     * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
-     *
-     * @param g      The guild to remove the blacklist to
-     * @param entity The entity to target
-     * @param writeToDb Whether or not to write the change to the database
-     * @return A response string to print into the logs
-     */
-    public String whitelist(Guild g, BannableEntity entity, boolean writeToDb) {
-        if (blacklist.containsKey(g)) {
-            blacklist.get(g).remove(entity);
-        }
-
-        whitelist.putIfAbsent(g, new HashSet<>());
-        whitelist.get(g).add(entity);
+        blacklist.removeMerging(g, entity);
+        whitelist.putMerging(g, entity);
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);
-
-        if (writeToDb) {
-            l.getFileController().applyBlacklistDeletion(g, entity);
-            l.getFileController().applyWhitelistAddition(g, entity);
-        }
 
         return confirmAction(Action.WHITELIST, g, entity);
     }

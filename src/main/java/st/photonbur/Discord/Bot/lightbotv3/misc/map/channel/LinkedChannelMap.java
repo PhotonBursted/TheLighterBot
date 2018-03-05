@@ -1,20 +1,20 @@
-package st.photonbur.Discord.Bot.lightbotv3.misc.channelmap;
+package st.photonbur.Discord.Bot.lightbotv3.misc.map.channel;
 
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 
 public class LinkedChannelMap extends ChannelMap {
     public LinkedChannelMap() {
-        super("linked");
+        super();
     }
 
     @Override
-    void addToDatabase(TextChannel tc, VoiceChannel vc) {
+    protected void addToDatabase(TextChannel tc, VoiceChannel vc) {
         l.getFileController().applyLinkAddition(tc, vc);
     }
 
     @Override
-    void deleteFromDatabase(TextChannel tc, VoiceChannel vc) {
+    protected void deleteFromDatabase(TextChannel tc, VoiceChannel vc) {
         l.getFileController().applyLinkDeletion(tc, vc);
     }
 }

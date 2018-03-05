@@ -29,7 +29,7 @@ public class UnpermanentChannelCommand extends Command {
             handleError(MessageContent.CHANNEL_NOT_PERMANENT);
         }
 
-        l.getChannelController().getPermChannels().remove(vc);
+        l.getChannelController().getPermChannels().removeMerging(vc);
 
         LoggerUtils.logAndDelete(log, String.format("%s has been made temporary.", vc.getName()));
         l.getDiscordController().sendMessage(ev,
