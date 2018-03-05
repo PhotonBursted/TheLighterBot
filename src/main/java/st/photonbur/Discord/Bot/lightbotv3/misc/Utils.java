@@ -5,10 +5,11 @@ import net.dv8tion.jda.core.entities.*;
 import st.photonbur.Discord.Bot.lightbotv3.entity.permissible.PermissibleEntity;
 
 import java.text.Normalizer;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Utils {
@@ -20,13 +21,8 @@ public class Utils {
      * @return The string consisting of all queue elements concatenated
      */
     public static String drainQueueToString(LinkedBlockingQueue<String> input) {
-        // Create an initial list to dump into
-        ArrayList<String> inputParts = new ArrayList<>();
-        // Drain all elements into the newly created list
-        input.drainTo(inputParts);
-
         // Return the elements concatenated by spaces
-        return String.join(" ", inputParts);
+        return input.stream().collect(Collectors.joining(" "));
     }
 
     /**
@@ -151,6 +147,12 @@ public class Utils {
             po.delete().reason(reason).queue();
         } else {
             po.getManagerUpdatable().clear(permsToRemove).update().reason(reason).queue();
+        }
+    }
+
+    public static void shortenQueueBy(Queue<String> input, int aliasLength) {
+        for (int i = 0; i < aliasLength; i++) {
+            input.poll();
         }
     }
 
