@@ -10,4 +10,8 @@ public class StringUtils {
             return name;
         }
     }
+
+    public static boolean startsWithIgnoreCase(String str1, String str2) {
+        return str1.toUpperCase().startsWith(str2.toUpperCase());
+    }
 }

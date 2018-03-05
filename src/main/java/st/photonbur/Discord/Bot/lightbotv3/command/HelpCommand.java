@@ -28,15 +28,15 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
     }
 
     @Override
-    void execute() {
+    protected void execute() {
         LinkedList<String> commandTextList = new LinkedList<>();
 
         l.getCommandParser().getCommands().stream()
-                .sorted((cmd1, cmd2) -> cmd1.getAliasCollection().asArray()[0].compareToIgnoreCase(cmd2.getAliasCollection().asArray()[0]))
+                .sorted((cmd1, cmd2) -> cmd1.getAliasCollection().get(0).compareToIgnoreCase(cmd2.getAliasCollection().get(0)))
                 .forEach(cmd -> {
             String sb =
-                    String.format("**%s** - %s", l.getDiscordController().getCommandPrefix() + cmd.getAliasCollection().asArray()[0], cmd.getDescription()) +
-                    String.format("\n>>|%s", cmd.getAliasCollection().asArray().length == 1 ? "None" : String.join(", ", Arrays.stream(cmd.getAliasCollection().asArray()).skip(1).sorted(String::compareToIgnoreCase).map(a -> l.getDiscordController().getCommandPrefix() + a).collect(Collectors.toList())) +
+                    String.format("**%s** - %s", l.getDiscordController().getCommandPrefix() + cmd.getAliasCollection().get(0), cmd.getDescription()) +
+                    String.format("\n>>|%s", cmd.getAliasCollection().size() == 1 ? "None" : String.join(", ", cmd.getAliasCollection().stream().skip(1).sorted(String::compareToIgnoreCase).map(a -> l.getDiscordController().getCommandPrefix() + a).collect(Collectors.toList())) +
                     String.format("\n>>|%s", cmd.getUsage().replace("{}", l.getDiscordController().getCommandPrefix())) +
                     String.format("\n>>|%s", cmd.getPermissionsRequired().length == 0 ? "None" : String.join(", ", Arrays.stream(cmd.getPermissionsRequired()).map(Enum::name).collect(Collectors.toList()))));
 
@@ -51,17 +51,17 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Displays information about the commands being part of the bot";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[] {};
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}help\n" +
                 " - Shows information of all commands implemented as of now.";
     }

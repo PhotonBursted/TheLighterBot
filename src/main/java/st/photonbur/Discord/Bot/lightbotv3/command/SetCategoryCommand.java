@@ -28,49 +28,51 @@ public class SetCategoryCommand extends Command implements Selector<Category> {
     }
 
     @Override
-    void execute() {
-        if (input.size() >= 1) {
-            search = Utils.drainQueueToString(input);
+    protected void execute() {
+        if (input.size() < 1) {
+            handleError("The category to set wasn't specified!");
+            return;
+        }
 
-            if (search.startsWith("cat:")) {
-                List<Category> candidates = l.getBot().getCategoriesByName(String.join(":", Arrays.copyOfRange(search.split(":"), 1, search.split(":").length)), true);
-                if (candidates.size() > 1) {
-                    LinkedHashMap<String, Category> candidateMap = new LinkedHashMap<>();
-                    candidates.forEach(candidate -> candidateMap.put(candidate.getName() + "(ID " + candidate.getId() + ")", candidate));
+        search = Utils.drainQueueToString(input);
 
-                    new SelectorBuilder<>(this)
-                            .setOptionMap(candidateMap)
-                            .build();
-                    return;
-                } else if (candidates.size() == 1) {
-                    c = candidates.get(0);
-                } else {
-                    c = null;
-                }
-            } else if (search.matches("[0-9]+")) {
-                c = l.getBot().getCategoryById(search);
+        if (search.startsWith("cat:")) {
+            List<Category> candidates = l.getBot().getCategoriesByName(String.join(":", Arrays.copyOfRange(search.split(":"), 1, search.split(":").length)), true);
+
+            if (candidates.size() > 1) {
+                LinkedHashMap<String, Category> candidateMap = new LinkedHashMap<>();
+                candidates.forEach(candidate -> candidateMap.put(String.format("%s (ID %s)", candidate.getName(), candidate.getId()), candidate));
+
+                new SelectorBuilder<>(this)
+                        .setOptionMap(candidateMap)
+                        .build();
+                return;
+            } else if (candidates.size() == 1) {
+                c = candidates.get(0);
             } else {
                 c = null;
             }
-
-            performCategoryChange();
+        } else if (search.matches("[0-9]+")) {
+            c = l.getBot().getCategoryById(search);
         } else {
-            handleError("The category to set wasn't specified!");
+            c = null;
         }
+
+        performCategoryChange();
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Sets the default category to place new temporary channels into.";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[] { Permission.MANAGE_CHANNEL };
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}setcat <searchTerm>\\n\" +\n" +
                 "    <searchTerm> can be any of:\n" +
                 "       - <search> - searches for a category ID.\n" +
@@ -80,35 +82,36 @@ public class SetCategoryCommand extends Command implements Selector<Category> {
 
     @Override
     public void onSelection(SelectionEvent<Category> selEv) {
-        if (selEv.selectionWasMade()) {
-            c = selEv.getSelectedOption();
-
-            performCategoryChange();
-        } else {
+        if (!selEv.selectionWasMade()) {
             handleError("The category change was cancelled.");
+            return;
         }
+
+        c = selEv.getSelectedOption();
+
+        performCategoryChange();
     }
 
     private void performCategoryChange() {
-        if (c != null || search.equals("remove") || search.equals("null")) {
-            if (c == null) {
-                l.getChannelController().getCategories().remove(ev.getGuild());
-                l.getFileController().applyDefaultCategoryDeletion(ev.getGuild());
-
-                l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.",
-                        DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                LoggerUtils.logAndDelete(log, "Removed default category from " + ev.getGuild().getName());
-            } else {
-                l.getChannelController().getCategories().put(ev.getGuild(), c);
-                l.getFileController().applyDefaultCategoryAddition(ev.getGuild(), c);
-
-                l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")",
-                        DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                LoggerUtils.logAndDelete(log, "Set default category to " + c.getName() + " for " + ev.getGuild().getName());
-            }
-
-        } else {
+        if (c == null && !search.equals("remove") && !search.equals("null")) {
             handleError("The category you specified couldn't be found!");
+            return;
+        }
+
+        if (c == null) {
+            l.getChannelController().getCategories().remove(ev.getGuild());
+            l.getFileController().applyDefaultCategoryDeletion(ev.getGuild());
+
+            l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.",
+                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+            LoggerUtils.logAndDelete(log, "Removed default category from " + ev.getGuild().getName());
+        } else {
+            l.getChannelController().getCategories().put(ev.getGuild(), c);
+            l.getFileController().applyDefaultCategoryAddition(ev.getGuild(), c);
+
+            l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")",
+                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+            LoggerUtils.logAndDelete(log, "Set default category to " + c.getName() + " for " + ev.getGuild().getName());
         }
     }
 }

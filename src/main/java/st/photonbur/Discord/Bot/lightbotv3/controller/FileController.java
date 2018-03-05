@@ -69,11 +69,31 @@ public class FileController {
         });
     }
 
+    private void applyAccessListDeletion(String tableName, Guild g, BannableEntity entity) throws SQLException {
+        executeChangeQuery("DELETE FROM ? WHERE server_id = ? AND entity_id = ?", stmt -> {
+            try {
+                stmt.setString(1, tableName);
+                stmt.setLong(2, g.getIdLong());
+                stmt.setLong(3, entity.getIdLong());
+            } catch (SQLException ex) {
+                log.error("Something went wrong when setting parameters for an access list addition", ex);
+            }
+        });
+    }
+
     public void applyBlacklistAddition(Guild g, BannableEntity entity) {
         try {
             applyAccessListAddition("Blacklists", g, entity);
         } catch (SQLException ex) {
             log.error("Something went wrong applying a blacklist addition", ex);
+        }
+    }
+
+    public void applyBlacklistDeletion(Guild g, BannableEntity entity) {
+        try {
+            applyAccessListDeletion("Blacklists", g, entity);
+        } catch (SQLException ex) {
+            log.error("Something went wrong applying a blacklist deletion", ex);
         }
     }
 
@@ -174,6 +194,14 @@ public class FileController {
         }
     }
 
+    public void applyWhitelistDeletion(Guild g, BannableEntity entity) {
+        try {
+            applyAccessListDeletion("Whitelists", g, entity);
+        } catch (SQLException ex) {
+            log.error("Something went wrong applying a whitelist deletion", ex);
+        }
+    }
+
     private void executeChangeQuery(String sql, Consumer<PreparedStatement> statementConsumer) throws SQLException {
         PreparedStatement query = conn.prepareStatement(sql);
         statementConsumer.accept(query);
@@ -222,10 +250,10 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getBlacklistController().blacklist(g, new BannableRole(entityId), false);
+                                l.getAccesslistController().blacklist(g, new BannableRole(entityId), false);
                                 break;
                             case "user":
-                                l.getBlacklistController().blacklist(g, new BannableUser(entityId), false);
+                                l.getAccesslistController().blacklist(g, new BannableUser(entityId), false);
                                 break;
                             default:
                         }
@@ -317,10 +345,10 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getBlacklistController().whitelist(g, new BannableRole(entityId), false);
+                                l.getAccesslistController().whitelist(g, new BannableRole(entityId), false);
                                 break;
                             case "user":
-                                l.getBlacklistController().whitelist(g, new BannableUser(entityId), false);
+                                l.getAccesslistController().whitelist(g, new BannableUser(entityId), false);
                                 break;
                             default:
                         }

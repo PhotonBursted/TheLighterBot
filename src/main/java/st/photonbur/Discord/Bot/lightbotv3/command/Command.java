@@ -3,12 +3,11 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollection;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
+import st.photonbur.Discord.Bot.lightbotv3.misc.StringUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.Arrays;
@@ -22,22 +21,20 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class Command {
-    private static final Logger log = LoggerFactory.getLogger(Command.class);
-
     /**
      * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
      */
-    GuildMessageReceivedEvent ev;
+    protected GuildMessageReceivedEvent ev;
     /**
      * A place to store the input of a user.
      * This input will be condensed out of a message and supplied by a {@link CommandParser CommandParser} if it is targeted at this command.
      */
-    LinkedBlockingQueue<String> input;
+    protected LinkedBlockingQueue<String> input;
 
-    final Launcher l;
+    protected final Launcher l;
     private CommandAliasCollection aliases;
 
-    Command(CommandAliasCollectionBuilder aliasCollectionBuilder) {
+    protected Command(CommandAliasCollectionBuilder aliasCollectionBuilder) {
         this.l = Launcher.getInstance();
 
         applyAliases(aliasCollectionBuilder);
@@ -60,7 +57,7 @@ public abstract class Command {
     /**
      * Method to be implemented with the behaviour and actions the command should have.
      */
-    abstract void execute();
+    protected abstract void execute();
 
     /**
      * Called by the {@link CommandParser} to execute the command.
@@ -69,15 +66,15 @@ public abstract class Command {
     void executeCmd() {
         this.ev = CommandParser.getLastEvent();
 
-        if (!l.getBlacklistController().isBlacklisted(ev.getMember())) {
-            if (canBeExecutedBy(ev.getMember())) {
-                execute();
-            } else {
-                handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
-            }
-        } else {
+        if (l.getAccesslistController().isEffectivelyBlacklisted(ev.getMember())) {
             handleError(MessageContent.BLACKLISTED);
         }
+
+        if (!canBeExecutedBy(ev.getMember())) {
+            handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
+        }
+
+        execute();
     }
 
     final CommandAliasCollection getAliasCollection() {
@@ -88,19 +85,19 @@ public abstract class Command {
      * Method to be implemented with the description describing this command.
      * @return The description explaining the intended function
      */
-    abstract String getDescription();
+    protected abstract String getDescription();
 
     /**
      * Method to be implemented with the permissions a user should possess in order to be allowed to execute this command.
      * @return The list of permissions needed to perform the command
      */
-    abstract Permission[] getPermissionsRequired();
+    protected abstract Permission[] getPermissionsRequired();
 
     /**
      * Method to be implemented with an explanation of the usage of this command.
      * @return The explanation of how to use the command
      */
-    abstract String getUsage();
+    protected abstract String getUsage();
 
     /**
      * Handles any errors that might occur during the handling of the input for a command.
@@ -125,7 +122,7 @@ public abstract class Command {
      *
      * @param msg The message to display
      */
-    void handleError(String msg) {
+    protected void handleError(String msg) {
         // Send a message indicating the error
         l.getDiscordController().sendMessage(ev, msg, 10);
         // Delete both messages after 10 seconds
@@ -159,7 +156,6 @@ public abstract class Command {
      * @param input The input to match from
      * @return Whether or not the input was targeted at this command
      */
-    // Method checking if the string is part of a command, trimming up the message in the process
     private boolean messageIsCommand(String query, LinkedBlockingQueue<String> input) {
         boolean success;
 
@@ -167,16 +163,10 @@ public abstract class Command {
         if (query.equals("")) {
             // Generate the full input from the input.
             // Don't use the original input as this operation clears all other input from the queue as well.
-            String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input));
-            // Try to find an alias that complies with the start of the input sequence
-            success = this.getAliasCollection().stream().anyMatch(alias -> inputStr.toLowerCase().startsWith(l.getDiscordController().getCommandPrefix() + alias.toLowerCase()));
+            String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input)).substring(l.getDiscordController().getCommandPrefix().length());
 
-            // If so, cut the first part of the input off
-            if (success) {
-                for (int i = 0; i < this.getAliasCollection().getAliasLength(); i++) {
-                    input.poll();
-                }
-            }
+            // Try to find an alias that complies with the start of the input sequence
+            success = this.getAliasCollection().stream().anyMatch(alias -> StringUtils.startsWithIgnoreCase(inputStr, alias));
         } else {
             success = input.peek().equalsIgnoreCase(l.getDiscordController().getCommandPrefix() + query);
 

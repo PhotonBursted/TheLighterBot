@@ -8,14 +8,15 @@ import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableRole;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableUser;
 import st.photonbur.Discord.Bot.lightbotv3.entity.permissible.PermissibleEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
+import st.photonbur.Discord.Bot.lightbotv3.misc.StringUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.*;
 
 /**
- * Maintains the blacklist. The blacklist contains users and roles who are not allowed to interact with the bot.
+ * Maintains the access list. The access list contains users and roles who are not or specifically allowed to interact with the bot.
  */
-public class BlacklistController {
+public class AccesslistController {
     private final Launcher l;
 
     /**
@@ -26,20 +27,27 @@ public class BlacklistController {
     }
 
     /**
-     * Holds the blacklisted entities per guild.
+     * Holds the blacklisted {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entities} per guild.
      */
-    private final HashMap<Guild, Set<ISnowflake>> blacklist;
+    private final HashMap<Guild, Set<BannableEntity>> blacklist;
+
+    /**
+     * Holds the whitelisted {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entities} per guild.
+     */
+    private final HashMap<Guild, Set<BannableEntity>> whitelist;
 
     private final static String REASON = "The server's blacklist changed and required a permission update";
-    
+
     /**
-     * The only BlacklistController instance permitted to exist.
+     * The only AccesslistController instance permitted to exist.
      * Part of the Singleton design pattern.
      */
-    private static BlacklistController instance;
+    private static AccesslistController instance;
 
-    private BlacklistController() {
+    private AccesslistController() {
         blacklist = new HashMap<>();
+        whitelist = new HashMap<>();
+
         l = Launcher.getInstance();
     }
 
@@ -61,9 +69,9 @@ public class BlacklistController {
      *
      * @return The only present instance of this class.
      */
-    public static synchronized BlacklistController getInstance() {
+    public static synchronized AccesslistController getInstance() {
         if (instance == null) {
-            instance = new BlacklistController();
+            instance = new AccesslistController();
         }
 
         return instance;
@@ -73,7 +81,7 @@ public class BlacklistController {
      * Blacklists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to
-     * @param entity The user or role to target
+     * @param entity The bannable entiity to target
      * @return A response string to print into the logs
      */
     public String blacklist(Guild g, BannableEntity entity) {
@@ -84,12 +92,16 @@ public class BlacklistController {
      * Blacklists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to apply the blacklist to
-     * @param entity The user or role to target
+     * @param entity The bannable entity to target
      * @return A response string to print into the logs
      */
     public String blacklist(Guild g, BannableEntity entity, boolean writeToDb) {
+        if (whitelist.containsKey(g)) {
+            whitelist.get(g).remove(entity);
+        }
+
         blacklist.putIfAbsent(g, new HashSet<>());
-        blacklist.get(g).add(entity.get());
+        blacklist.get(g).add(entity);
 
         updateChannelPermOverrides(Action.BLACKLIST, g,
                 entity.isOfClass(User.class) ?
@@ -98,6 +110,7 @@ public class BlacklistController {
 
         if (writeToDb) {
             l.getFileController().applyBlacklistAddition(g, entity);
+            l.getFileController().applyWhitelistDeletion(g, entity);
         }
 
         return confirmAction(Action.BLACKLIST, g, entity);
@@ -108,73 +121,153 @@ public class BlacklistController {
      *
      * @param action The type of action to have occured
      * @param g      The guild the action happened in
-     * @param entity The target object which was affected by the action
-     * @param <T>    The target object has to implement both {@link ISnowflake} and {@link IMentionable}
      * @return A response string to print into the logs
      */
-    private static <T extends ISnowflake > String confirmAction(Action action, Guild g, T entity) {
-        String entityType = entity.getClass().getSimpleName().toLowerCase().replace("impl", "");
+    private static String confirmAction(Action action, Guild g, BannableEntity entity) {
+        String entityType = entity.getClass().getSimpleName().toLowerCase();
 
         return String.format("%sed a %s in guild \"%s:\"\n" +
                         " - Guild ID: %s\n" +
                         " - %s ID: %s (%s)",
-                action.name().substring(0, 1).toUpperCase() + action.name().substring(1).toLowerCase(),
-                entityType, g.getName(), g.getId(),
-                entityType.substring(0, 1).toUpperCase() + entityType.substring(1), entity.getId(),
-                entity instanceof User ? Utils.userAsString((User) entity) : g.getRoleById(entity.getId()).getName());
+                StringUtils.capitalize(action.name().toLowerCase()),
+                entityType, g.getName(), g.getIdLong(),
+                StringUtils.capitalize(entityType), entity.getIdLong(),
+                entity.isOfClass(User.class) ? Utils.userAsString((User) entity) : g.getRoleById(entity.getId()).getName());
     }
 
-    Set<? extends ISnowflake> getForGuild(Guild g) {
+    public Set<? extends ISnowflake> getBlacklistForGuild(Guild g) {
         return blacklist.get(g);
     }
 
-    /**
-     * Checks if an entity is currently whitelisted within their guild.
-     *
-     * @param g        The {@link Guild guild} to perform the check on
-     * @param targetID The String representation of the target's unique ID
-     * @return True if the guild's blacklist contains an entity with a unique ID matching the target
-     */
-    public boolean isBlacklisted(Guild g, String targetID) {
-        Set<ISnowflake> blacklistees = blacklist.get(g);
-
-        return blacklistees != null &&
-                blacklistees.size() != 0 &&
-                blacklistees.stream().anyMatch(item -> item.getId().equals(targetID));
+    public Set<? extends ISnowflake> getWhitelistForGuild(Guild g) {
+        return whitelist.get(g);
     }
 
     /**
-     * Checks if an entity is currently whitelisted within their guild.
+     * <p>
+     * Checks if a member is currently blacklisted within their guild.
+     * </p>
+     * <p></p>
+     * This method doesn't take the member's roles or whitelists into account; only the member's presence in the blacklist is teested.
+     * </p>
      *
-     * @param g        The {@link Guild guild} to perform the check on
-     * @param targetID The long representation of the target's unique ID
-     * @return True if the guild's blacklist contains an entity with a unique ID matching the target
-     */
-    public boolean isBlacklisted(Guild g, long targetID) {
-        Set<ISnowflake> blacklistees = blacklist.get(g);
-
-        return blacklistees != null &&
-                blacklistees.size() != 0 &&
-                blacklistees.stream().anyMatch(item -> item.getIdLong() == targetID);
-    }
-
-    /**
-     * Checks if a member is currently whitelisted within their guild.
-     *
-     * @param m The {@link Member member} to perform the check on
-     * @return True if either the member or any of the member's roles are blacklisted
+     * @param m The {@link net.dv8tion.jda.core.entities.Member member} to perform the check on
+     * @return {@code true} if the member is blacklisted, {@code false} otherwise.
+     * @see AccesslistController#isEffectivelyBlacklisted(Member)
+     * @see AccesslistController#isBlacklisted(Role)
      */
     public boolean isBlacklisted(Member m) {
-        // Retrieve the entities blacklisted for the member's guild
-        Set<ISnowflake> blacklistees = blacklist.get(m.getGuild());
+        return isContainedWithinAccessList(new BannableUser(m.getUser()), blacklist.get(m.getGuild()));
+    }
 
-        // Return
-        return blacklistees != null &&
-                blacklistees.size() != 0 &&
-                blacklistees.stream().anyMatch(item ->
-                        m.getRoles().stream().anyMatch(role ->
-                                item.getId().equals(role.getId())) ||
-                                item.getId().equals(m.getUser().getId()));
+    /**
+     * <p>
+     * Checks if a role is currently blacklisted within their guild.
+     * </p>
+     * <p></p>
+     * This method doesn't take whitelists into account; only the role's presence in the blacklist is teested.
+     * </p>
+     *
+     * @param r The {@link net.dv8tion.jda.core.entities.Role role} to perform the check on
+     * @return {@code true} if the role is blacklisted, {@code false} otherwise.
+     * @see AccesslistController#isEffectivelyBlacklisted(Member)
+     * @see AccesslistController#isBlacklisted(Member)
+     */
+    public boolean isBlacklisted(Role r) {
+        return isContainedWithinAccessList(new BannableRole(r), blacklist.get(r.getGuild()));
+    }
+    
+    /**
+     * Checks if an {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entity} is currently
+     * contained within the passed list of {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity banned entities}.
+     *
+     * @param entity The {@link st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity entity} to perform the check on
+     * @return {@code true} if the entity is contained within, {@code false} otherwise.
+     */
+    private boolean isContainedWithinAccessList(BannableEntity entity,
+                                                Set<BannableEntity> entities) {
+        return entities != null &&
+                entities.size() != 0 &&
+                entities.stream().anyMatch(item ->
+                        entity.getIdLong() == item.getIdLong());
+    }
+
+    /**
+     * <p>
+     * Checks if a member is currently <i>effectively</i> blacklisted within their guild.
+     * </p>
+     * <p>
+     *     Being effectively blacklisted means one or more of the following apply:
+     *     <ul>
+     *         <li>The passed member itself is blacklisted explicitly.</li>
+     *         <li>One of the passed member's roles is blacklisted without the member being whitelisted explicitly.</li>
+     *     </ul>
+     * </p>
+     * <p></p>
+     * This method, contrary to {@link #isBlacklisted(Member)}, takes into the member's roles or possible presence in the whitelist into account, as described above.
+     * </p>
+     *
+     * @param m The member to check for being effectively blacklisted from their guild.
+     * @return {@code true} if the member is effectively blacklisted, {@code false} otherwise.
+     */
+    public boolean isEffectivelyBlacklisted(Member m) {
+        return isBlacklisted(m) || (m.getRoles().stream().anyMatch(this::isBlacklisted) && !isWhitelisted(m));
+    }
+
+    /**
+     * <p>
+     * Checks if a member is currently <i>effectively</i> whitelisted within their guild.
+     * </p>
+     * <p>
+     *     Being effectively whitelisted means one or more of the following apply:
+     *     <ul>
+     *         <li>The passed member itself is whitelisted explicitly.</li>
+     *         <li>One of the passed member's roles is whitelisted without the member being blacklisted explicitly</li>
+     *     </ul>
+     * </p>
+     * <p></p>
+     * This method, contrary to {@link #isWhitelisted(Member)}, takes into the member's roles or possible presence in the whitelist into account, as described above.
+     * </p>
+     *
+     * @param m The member to check for being effectively blacklisted from their guild.
+     * @return {@code true} if the member is effectively blacklisted, {@code false} otherwise.
+     */
+    public boolean isEffectivelyWhitelisted(Member m) {
+        return isWhitelisted(m) || (m.getRoles().stream().anyMatch(this::isWhitelisted) && !isBlacklisted(m));
+    }
+
+    /**
+     * <p>
+     * Checks if a member is currently whitelisted within their guild.
+     * </p>
+     * <p></p>
+     * This method doesn't take the member's roles or blacklists into account; only the member's presence in the whitelist is teested.
+     * </p>
+     *
+     * @param m The {@link net.dv8tion.jda.core.entities.Member member} to perform the check on
+     * @return {@code true} if the member is whitelisted, {@code false} otherwise.
+     * @see AccesslistController#isEffectivelyWhitelisted(Member)
+     * @see AccesslistController#isWhitelisted(Role)
+     */
+    private boolean isWhitelisted(Member m) {
+        return isContainedWithinAccessList(new BannableUser(m.getUser()), whitelist.get(m.getGuild()));
+    }
+
+    /**
+     * <p>
+     * Checks if a role is currently whitelisted within their guild.
+     * </p>
+     * <p></p>
+     * This method doesn't take blacklists into account; only the role's presence in the whitelist is teested.
+     * </p>
+     *
+     * @param r The {@link net.dv8tion.jda.core.entities.Role role} to perform the check on
+     * @return {@code true} if the member is whitelisted, {@code false} otherwise.
+     * @see AccesslistController#isEffectivelyWhitelisted(Member)
+     * @see AccesslistController#isWhitelisted(Member)
+     */
+    public boolean isWhitelisted(Role r) {
+        return isContainedWithinAccessList(new BannableRole(r), whitelist.get(r.getGuild()));
     }
 
     private void updateChannelPermOverrides(Action action, Guild g, BannableEntity entity) {
@@ -263,7 +356,7 @@ public class BlacklistController {
      * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to remove the blacklist to
-     * @param entity The wrapped representation of the Discord entity to target
+     * @param entity The entity to target
      * @return A response string to print into the logs
      */
     public String whitelist(Guild g, BannableEntity entity) {
@@ -274,16 +367,22 @@ public class BlacklistController {
      * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
      * @param g      The guild to remove the blacklist to
-     * @param entity The wrapped representation of the Discord entity to target
+     * @param entity The entity to target
      * @param writeToDb Whether or not to write the change to the database
      * @return A response string to print into the logs
      */
-    String whitelist(Guild g, BannableEntity entity, boolean writeToDb) {
-        blacklist.get(g).remove(entity.get());
+    public String whitelist(Guild g, BannableEntity entity, boolean writeToDb) {
+        if (blacklist.containsKey(g)) {
+            blacklist.get(g).remove(entity);
+        }
+
+        whitelist.putIfAbsent(g, new HashSet<>());
+        whitelist.get(g).add(entity);
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);
 
         if (writeToDb) {
+            l.getFileController().applyBlacklistDeletion(g, entity);
             l.getFileController().applyWhitelistAddition(g, entity);
         }
 

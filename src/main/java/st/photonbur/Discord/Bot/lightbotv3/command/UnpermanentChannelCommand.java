@@ -18,39 +18,39 @@ public class UnpermanentChannelCommand extends Command {
     }
 
     @Override
-    void execute() {
-        if (ev.getMember().getVoiceState().inVoiceChannel()) {
-            VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
-
-            if (l.getChannelController().isPermanent(vc)) {
-                l.getChannelController().getPermChannels().remove(vc);
-
-                LoggerUtils.logAndDelete(log, String.format("%s has been made temporary.", vc.getName()));
-                l.getDiscordController().sendMessage(ev,
-                        String.format("Successfully made **%s** temporary!%s", vc.getName(),
-                                l.getChannelController().isLinked(vc) ? "\n__Be aware that leaving the channel empty will now delete the channel!__" : ""),
-                        DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().applyPermDeletion(ev.getChannel(), vc);
-            } else {
-                handleError(MessageContent.CHANNEL_NOT_PERMANENT);
-            }
-        } else {
+    protected void execute() {
+        if (!ev.getMember().getVoiceState().inVoiceChannel()) {
             handleError(MessageContent.NOT_IN_VOICE_CHANNEL);
         }
+
+        VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
+
+        if (!l.getChannelController().isPermanent(vc)) {
+            handleError(MessageContent.CHANNEL_NOT_PERMANENT);
+        }
+
+        l.getChannelController().getPermChannels().remove(vc);
+
+        LoggerUtils.logAndDelete(log, String.format("%s has been made temporary.", vc.getName()));
+        l.getDiscordController().sendMessage(ev,
+                String.format("Successfully made **%s** temporary!%s", vc.getName(),
+                        l.getChannelController().isLinked(vc) ? "\n__Be aware that leaving the channel empty will now delete the channel!__" : ""),
+                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+        l.getFileController().applyPermDeletion(ev.getChannel(), vc);
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Makes a voice channel temporary.\nThis means the channel will be deleted when empty and linked.";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[] { Permission.MANAGE_CHANNEL };
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}unperm\n" +
                 "    Makes the voice channel you are in temporary.\n" +
                 "    If the voice channel is linked to a text channel, this means it will be deleted when empty.";

@@ -44,13 +44,22 @@ public class TemporaryChannelCommand extends Command {
     }
 
     @Override
-    void execute() {
+    protected void execute() {
         // Gather the name of the channel from the remaining input
         String channelName = Utils.drainQueueToString(input);
 
         // Check if the channel name is available still
-        if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0 &&
-                ev.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + channelName), true).size() == 0) {
+        if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() != 0 ||
+                ev.getGuild().getTextChannelsByName(Utils.ircify("tdc-" + channelName), true).size() != 0) {
+            // If no channel is available, send feedback to the user
+            if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0) {
+                handleError("A text channel with the specified name already exists!\n" +
+                        "Keep in mind that in order to generate a valid channel name, special characters are deleted.");
+            } else {
+                handleError("The voice channel name specified was already taken!\n" +
+                        "Try again with another name.");
+            }
+        } else {
             Category parent;
             HashMap<Guild, Category> categories = l.getChannelController().getCategories();
 
@@ -80,30 +89,21 @@ public class TemporaryChannelCommand extends Command {
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL
             );
             log.info("Created group " + channelName + "!");
-        } else {
-            // If no channel is available, send feedback to the user
-            if (ev.getGuild().getVoiceChannelsByName("[T] " + channelName, true).size() == 0) {
-                handleError("A text channel with the specified name already exists!\n" +
-                        "Keep in mind that in order to generate a valid channel name, special characters are deleted");
-            } else {
-                handleError("The voice channel name specified was already taken!\n" +
-                        "Try again with another name.");
-            }
         }
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Creates a new set of temporary channels which delete upon inactivity.";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[] {};
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}tempchan <name>\n" +
                 "    <name> specifies the name for the to be generated collection of channels.";
     }

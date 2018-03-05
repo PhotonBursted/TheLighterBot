@@ -21,7 +21,7 @@ public class InfoCommand extends Command {
     }
 
     @Override
-    void execute() {
+    protected void execute() {
         EmbedBuilder eb = new EmbedBuilder();
         eb.addField("General information",
                 "Name: `TheLighterBot`\n" +
@@ -42,17 +42,17 @@ public class InfoCommand extends Command {
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Returns information about the bot.";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[0];
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}info\n" +
                 "    Returns information about the bot.";
     }

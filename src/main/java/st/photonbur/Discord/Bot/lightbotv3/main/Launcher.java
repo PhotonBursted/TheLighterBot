@@ -4,7 +4,9 @@ import net.dv8tion.jda.core.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.*;
-import st.photonbur.Discord.Bot.lightbotv3.controller.BlacklistController;
+import st.photonbur.Discord.Bot.lightbotv3.command.accesslist.BlacklistCommand;
+import st.photonbur.Discord.Bot.lightbotv3.command.accesslist.WhitelistCommand;
+import st.photonbur.Discord.Bot.lightbotv3.controller.AccesslistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
@@ -47,8 +49,8 @@ public class Launcher {
         return getDiscordController().getBot();
     }
 
-    public BlacklistController getBlacklistController() {
-        return BlacklistController.getInstance();
+    public AccesslistController getAccesslistController() {
+        return AccesslistController.getInstance();
     }
 
     public ChannelController getChannelController() {

@@ -18,38 +18,40 @@ public class PermanentChannelCommand extends Command {
     }
 
     @Override
-    void execute() {
-        if (ev.getMember().getVoiceState().inVoiceChannel()) {
-            VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
-
-            if (!l.getChannelController().isPermanent(vc)) {
-                l.getChannelController().getPermChannels().put(ev.getChannel(), vc);
-
-                LoggerUtils.logAndDelete(log, String.format("%s has been made permanent.", vc.getName()));
-                l.getDiscordController().sendMessage(ev.getChannel(),
-                        String.format("Successfully made **%s** permanent!", vc.getName()),
-                        DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
-                l.getFileController().applyPermAddition(ev.getChannel(), vc);
-            } else {
-                handleError(MessageContent.CHANNEL_ALREADY_PERMANENT);
-            }
-        } else {
+    protected void execute() {
+        if (!ev.getMember().getVoiceState().inVoiceChannel()) {
             handleError(MessageContent.NOT_IN_VOICE_CHANNEL);
+            return;
         }
+
+        VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
+
+        if (l.getChannelController().isPermanent(vc)) {
+            handleError(MessageContent.CHANNEL_ALREADY_PERMANENT);
+            return;
+        }
+
+        l.getChannelController().getPermChannels().put(ev.getChannel(), vc);
+
+        LoggerUtils.logAndDelete(log, String.format("%s has been made permanent.", vc.getName()));
+        l.getDiscordController().sendMessage(ev.getChannel(),
+                String.format("Successfully made **%s** permanent!", vc.getName()),
+                DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
+        l.getFileController().applyPermAddition(ev.getChannel(), vc);
     }
 
     @Override
-    String getDescription() {
+    protected String getDescription() {
         return "Makes a voice channel permanent.\nThis means the channel will not be deleted, even when it is empty and linked.";
     }
 
     @Override
-    Permission[] getPermissionsRequired() {
+    protected Permission[] getPermissionsRequired() {
         return new Permission[] { Permission.MANAGE_CHANNEL };
     }
 
     @Override
-    String getUsage() {
+    protected String getUsage() {
         return "{}perm\n" +
                 "    Makes the voice channel the issuer is in permanent.";
     }

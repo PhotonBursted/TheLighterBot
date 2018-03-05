@@ -2,6 +2,10 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
+import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,6 +18,8 @@ public class CommandParser extends ListenerAdapter {
      * Constant to store the space separator in. This to avoid many String object creations
      */
     private static final String SEP_SPACE = "\\s+";
+
+    private static final Logger log = LoggerFactory.getLogger(CommandParser.class);
 
     /**
      * The last event to have been parsed by the parser
@@ -79,20 +85,29 @@ public class CommandParser extends ListenerAdapter {
         // Get the raw message. This includes all markup as well.
         String msg = ev.getMessage().getContentRaw();
 
-        // Create a queue of the input. Every space separated piece of the string is a new element
-        LinkedBlockingQueue<String> input = new LinkedBlockingQueue<>(Arrays.asList(msg.split(SEP_SPACE)));
+        if (msg.startsWith(DiscordController.getInstance().getCommandPrefix())) {
+            // Create a queue of the input. Every space separated piece of the string is a new element
+            LinkedBlockingQueue<String> input = new LinkedBlockingQueue<>(Arrays.asList(msg.split(SEP_SPACE)));
 
-        // Try to find if a command was referenced, and if there was any, find which
-        Command targetCmd = commands.stream()
-                .filter(cmd -> cmd.messageIsCommand(input))
-                .sorted((cmd1, cmd2) -> Integer.compare(cmd2.getAliasCollection().getAliasLength(), cmd1.getAliasCollection().getAliasLength()))
-                .findFirst().orElse(null);
+            StringBuilder results = new StringBuilder("Found commands for user input:")
+                    .append(String.format("\n - Input: |%s|\n", msg));
 
-        // If a command was referenced, save the event and execute the command
-        if (targetCmd != null) {
-            lastEvent = ev;
+            // Try to find if a command was referenced, and if there was any, find which
+            Command targetCmd = commands.stream()
+                    .filter(cmd -> cmd.messageIsCommand(input))
+                    .peek(cmd -> results.append("\n - ").append(cmd.getAliasCollection().get(0)))
+                    .sorted((cmd1, cmd2) -> Integer.compare(cmd2.getAliasCollection().getAliasLength(), cmd1.getAliasCollection().getAliasLength()))
+                    .findFirst().orElse(null);
 
-            targetCmd.prepareWithInput(input).executeCmd();
+            // If a command was referenced, save the event and execute the command
+            if (targetCmd != null) {
+                log.info(results.append(String.format("\n\nChosen: %s", targetCmd.getAliasCollection().get(0))).toString());
+
+                lastEvent = ev;
+
+                Utils.shortenQueueBy(input, targetCmd.getAliasCollection().getAliasLength());
+                targetCmd.prepareWithInput(input).executeCmd();
+            }
         }
     }
 }
