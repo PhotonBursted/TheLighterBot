@@ -28,8 +28,8 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
         return entity;
     }
 
-    public boolean isOfClass(Class clazz) {
-        return entity.getClass() == clazz;
+    public boolean isOfClass(Class<? extends ISnowflake> clazz) {
+        return clazz.isAssignableFrom(entity.getClass());
     }
 
     @Override

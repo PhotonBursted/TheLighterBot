@@ -33,8 +33,8 @@ public class PermissibleEntity<T extends IPermissionHolder> implements IPermissi
         return entity;
     }
 
-    public boolean isOfClass(Class clazz) {
-        return entity.getClass() == clazz;
+    public boolean isOfClass(Class<? extends IPermissionHolder> clazz) {
+        return clazz.isAssignableFrom(entity.getClass());
     }
 
     @Override
