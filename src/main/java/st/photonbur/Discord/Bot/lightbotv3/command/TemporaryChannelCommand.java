@@ -2,15 +2,13 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Category;
-import net.dv8tion.jda.core.entities.Guild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
-
-import java.util.*;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.CategoryMap;
 
 public class TemporaryChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(TemporaryChannelCommand.class);
@@ -37,7 +35,7 @@ public class TemporaryChannelCommand extends Command {
                     vc -> l.getChannelController().createTempTextChannel(ev, channelName, parent,
                             tc -> {
                                 // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
-                                l.getChannelController().getLinkedChannels().putMerging(tc, vc);
+                                l.getChannelController().getLinkedChannels().putStoring(tc, vc);
                                 l.getChannelController().setNewChannelTimeout(vc);
                             }));
         }
@@ -61,7 +59,7 @@ public class TemporaryChannelCommand extends Command {
             }
         } else {
             Category parent;
-            HashMap<Guild, Category> categories = l.getChannelController().getCategories();
+            CategoryMap categories = l.getChannelController().getCategories();
 
             LoggerUtils.logAndDelete(log, "Creating new temporary channel set\n" +
                     " - Name: " + channelName);
@@ -74,7 +72,7 @@ public class TemporaryChannelCommand extends Command {
             } else {
                 // A category was specified but not found.
                 // The category is removed from registry and a new parent category will be created.
-                categories.remove(ev.getGuild());
+                categories.removeByKeyStoring(ev.getGuild());
                 parent = null;
             }
 

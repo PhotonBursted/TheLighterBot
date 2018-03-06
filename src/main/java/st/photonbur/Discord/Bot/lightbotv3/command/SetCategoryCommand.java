@@ -99,15 +99,13 @@ public class SetCategoryCommand extends Command implements Selector<Category> {
         }
 
         if (c == null) {
-            l.getChannelController().getCategories().remove(ev.getGuild());
-            l.getFileController().applyDefaultCategoryDeletion(ev.getGuild());
+            l.getChannelController().getCategories().removeByKeyStoring(ev.getGuild());
 
             l.getDiscordController().sendMessage(ev, "Successfully removed the category to put new temporary channels in.",
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
             LoggerUtils.logAndDelete(log, "Removed default category from " + ev.getGuild().getName());
         } else {
-            l.getChannelController().getCategories().put(ev.getGuild(), c);
-            l.getFileController().applyDefaultCategoryAddition(ev.getGuild(), c);
+            l.getChannelController().getCategories().putStoring(ev.getGuild(), c);
 
             l.getDiscordController().sendMessage(ev, "Successfully set category to put new temporary channels in to **" + c.getName() + "** (ID " + c.getId() + ")",
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL);

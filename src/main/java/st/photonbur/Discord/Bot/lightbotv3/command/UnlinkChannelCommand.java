@@ -32,9 +32,9 @@ public class UnlinkChannelCommand extends Command {
 
         TextChannel tc = l.getChannelController().getLinkedChannels().getForVoiceChannel(vc);
 
-        l.getChannelController().getLinkedChannels().removeMerging(vc);
+        l.getChannelController().getLinkedChannels().removeByValueStoring(vc);
         if (l.getChannelController().isPermanent(vc)) {
-            l.getChannelController().getPermChannels().removeMerging(vc);
+            l.getChannelController().getPermChannels().removeByValueStoring(vc);
         }
 
         LoggerUtils.logAndDelete(log, String.format("A link has been removed:\n" +

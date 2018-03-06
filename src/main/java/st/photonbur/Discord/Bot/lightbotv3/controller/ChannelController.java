@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
+import st.photonbur.Discord.Bot.lightbotv3.misc.map.CategoryMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.channel.LinkedChannelMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.channel.PermanentChannelMap;
 
@@ -40,7 +41,7 @@ public class ChannelController extends ListenerAdapter {
     /**
      * Stores the default category specified per guild
      */
-    private final HashMap<Guild, Category> categories;
+    private final CategoryMap categories;
     /**
      * Stores a timeout per voice channel.
      * Makes sure that, when a voice channel is created, it gets deleted when it is left unused.
@@ -66,7 +67,7 @@ public class ChannelController extends ListenerAdapter {
     private ChannelController(Launcher l) {
         this.l = l;
 
-        categories = new HashMap<>();
+        categories = new CategoryMap();
         linkedChannels = new LinkedChannelMap();
         permChannels = new PermanentChannelMap();
         timeoutCandidates = new HashMap<>();
@@ -277,7 +278,7 @@ public class ChannelController extends ListenerAdapter {
     /**
      * @return The categories saved for every guild.
      */
-    public HashMap<Guild, Category> getCategories() {
+    public CategoryMap getCategories() {
         return categories;
     }
 
@@ -430,11 +431,11 @@ public class ChannelController extends ListenerAdapter {
         VoiceChannel vc = ev.getChannel();
 
         if (isPermanent(vc)) {
-            permChannels.removeMerging(permChannels.getForVoiceChannel(vc), vc);
+            permChannels.removeStoring(permChannels.getForVoiceChannel(vc), vc);
         }
 
         if (isLinked(vc)) {
-            linkedChannels.removeMerging(vc);
+            linkedChannels.removeByValueStoring(vc);
         }
     }
 
@@ -453,15 +454,21 @@ public class ChannelController extends ListenerAdapter {
 
         if (isPermanent(tc) && vcs != null) {
             for (VoiceChannel vc : vcs) {
-                permChannels.removeMerging(vc);
+                permChannels.removeByValueStoring(vc);
             }
         }
 
         if (isLinked(tc) && vcs != null) {
             for (VoiceChannel vc : vcs) {
-                linkedChannels.removeMerging(vc);
+                linkedChannels.removeByValueStoring(vc);
             }
         }
+    }
+
+    public void reset() {
+        categories.clear();
+        linkedChannels.clear();
+        permChannels.clear();
     }
 
     /**

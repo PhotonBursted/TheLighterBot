@@ -22,7 +22,7 @@ public class FileController {
     private static FileController instance;
     private final Launcher l;
 
-    private static boolean writeToDb;
+    private static boolean writeToDbAllowed;
 
     private FileController(String dbUrl, String dbPort, String dbName, String dbUser, String dbPass) {
         this.l = Launcher.getInstance();
@@ -32,10 +32,6 @@ public class FileController {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-    }
-
-    public static boolean shouldWriteToDb() {
-        return writeToDb;
     }
 
     /**
@@ -239,7 +235,7 @@ public class FileController {
     }
 
     private void executeChangeQuery(String sql, Consumer<PreparedStatement> statementConsumer) throws SQLException {
-        if (shouldWriteToDb()) {
+        if (writeToDbAllowed) {
             PreparedStatement query = conn.prepareStatement(sql);
             statementConsumer.accept(query);
 
@@ -252,9 +248,9 @@ public class FileController {
         log.info("Loading all guild data...");
 
         // Disable writing to the database as just loading is required
-        writeToDb = false;
+        writeToDbAllowed = false;
         loadAllDataFromDatabase();
-        writeToDb = true;
+        writeToDbAllowed = true;
 
         log.info(String.format("Done processing guild files.\n\nFound %d pairs of permanent and %d pairs of linked channels.",
                 l.getChannelController().getPermChannels().size(),
@@ -264,11 +260,12 @@ public class FileController {
     private void loadAllDataFromDatabase() {
         try {
             if (!conn.isClosed()) {
+                l.getAccesslistController().reset();
                 retrieveBlacklist();
                 retrieveWhitelist();
 
+                l.getChannelController().reset();
                 retrieveDefaultCategories();
-
                 retrieveLinkedChannels();
                 retrievePermChannels();
             }
@@ -346,7 +343,7 @@ public class FileController {
                         VoiceChannel vc = l.getBot().getVoiceChannelById(result.getLong("vc_id"));
 
                         if (tc != null && vc != null) {
-                            l.getChannelController().getLinkedChannels().putMerging(tc, vc);
+                            l.getChannelController().getLinkedChannels().putStoring(tc, vc);
                         }
                     } catch (SQLException ex) {
                         log.error("Something went wrong retrieving the linked channels", ex);
@@ -364,7 +361,7 @@ public class FileController {
                         VoiceChannel vc = l.getBot().getVoiceChannelById(result.getLong("vc_id"));
 
                         if (tc != null && vc != null) {
-                            l.getChannelController().getPermChannels().putMerging(tc, vc);
+                            l.getChannelController().getPermChannels().putStoring(tc, vc);
                         }
                     } catch (SQLException ex) {
                         log.error("Something went wrong retrieving the permanent channels", ex);

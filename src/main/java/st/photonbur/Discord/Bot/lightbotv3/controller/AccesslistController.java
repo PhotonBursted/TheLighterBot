@@ -89,8 +89,8 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String blacklist(Guild g, BannableEntity entity) {
-        blacklist.putMerging(g, entity);
-        whitelist.removeMerging(g, entity);
+        blacklist.putStoring(g, entity);
+        whitelist.removeStoring(g, entity);
 
         updateChannelPermOverrides(Action.BLACKLIST, g,
                 entity.isOfClass(User.class) ?
@@ -336,6 +336,11 @@ public class AccesslistController {
                 });
     }
 
+    public void reset() {
+        blacklist.clear();
+        whitelist.clear();
+    }
+
     /**
      * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
@@ -344,8 +349,8 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String whitelist(Guild g, BannableEntity entity) {
-        blacklist.removeMerging(g, entity);
-        whitelist.putMerging(g, entity);
+        blacklist.removeStoring(g, entity);
+        whitelist.putStoring(g, entity);
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);
 

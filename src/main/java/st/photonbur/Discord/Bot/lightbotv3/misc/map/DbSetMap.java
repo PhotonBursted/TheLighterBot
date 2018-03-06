@@ -1,59 +1,66 @@
 package st.photonbur.Discord.Bot.lightbotv3.misc.map;
 
-import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import java.util.*;
-
-public abstract class DbSetMap<K, V> extends LinkedHashMap<K, Set<V>> {
-    protected static final Launcher l = Launcher.getInstance();
-
-    protected abstract void addToDatabase(K key, V value);
-
-    protected abstract void deleteFromDatabase(K key, V value);
-
+public abstract class DbSetMap<K, V> extends GenericDbMap<K, V, Set<V>> {
     protected K getForValue(V value) {
         Map.Entry<K, Set<V>> mapEntry = entrySet().stream().filter(set -> set.getValue().contains(value)).findFirst().orElse(null);
 
         return mapEntry == null ? null : mapEntry.getKey();
     }
 
-    public void putMerging(K tc, V vc) {
-        if (keySet().contains(tc)) {
-            get(tc).add(vc);
-
-            if (FileController.shouldWriteToDb()) {
-                addToDatabase(tc, vc);
-            }
+    @Override
+    public void putStoring(K key, V value) {
+        if (keySet().contains(key)) {
+            get(key).add(value);
+            addToDatabase(key, value);
         } else {
             // Create a new key value pair so the voice channels linked to this text channel can be put into the map
-            put(tc, new HashSet<>());
+            put(key, new HashSet<>());
 
             // Since the key is now available, add the voice channel into the map
-            putMerging(tc, vc);
+            putStoring(key, value);
         }
     }
 
-    public void removeMerging(V value) {
-        for (K key : keySet()) removeMerging(key, value);
+    @Override
+    protected void removeEntryStoring(Map.Entry<K, Set<V>> entry, V value) {
+        entry.getValue().remove(value);
+        deleteFromDatabase(entry.getKey(), value);
+
+        if (entry.getValue().size() == 0) {
+            remove(entry.getKey());
+        }
     }
 
-    public void removeMerging(K key, V value) {
+    @Override
+    public void removeByKeyStoring(K key) {
         Optional<Map.Entry<K, Set<V>>> optionalEntry = entrySet().stream()
-                .filter(set -> set.getValue().contains(value))
-                .filter(set -> set.getKey().equals(key))
+                .filter(entry -> entry.getKey().equals(key))
                 .findFirst();
 
-        optionalEntry.ifPresent(entry -> {
-            entry.getValue().remove(value);
+        optionalEntry.ifPresent(entry -> remove(entry.getKey()));
+    }
 
-            if (FileController.shouldWriteToDb()) {
-                deleteFromDatabase(entry.getKey(), value);
-            }
+    @Override
+    public void removeByValueStoring(V value) {
+        Optional<Map.Entry<K, Set<V>>> optionalEntry = entrySet().stream()
+                .filter(entry -> entry.getValue().contains(value))
+                .findFirst();
 
-            if (entry.getValue().size() == 0) {
-                remove(entry.getKey());
-            }
-        });
+        optionalEntry.ifPresent(entry -> removeEntryStoring(entry, value));
+    }
+
+    @Override
+    public void removeStoring(K key, V value) {
+        Optional<Map.Entry<K, Set<V>>> optionalEntry = entrySet().stream()
+                .filter(entry -> entry.getKey().equals(key))
+                .filter(entry -> entry.getValue().contains(value))
+                .findFirst();
+
+        optionalEntry.ifPresent(entry -> removeEntryStoring(entry, value));
     }
 }
