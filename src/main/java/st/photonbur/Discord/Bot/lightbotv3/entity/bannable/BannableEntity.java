@@ -3,6 +3,7 @@ package st.photonbur.Discord.Bot.lightbotv3.entity.bannable;
 import net.dv8tion.jda.core.entities.ISnowflake;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -24,8 +25,22 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
         this.entity = retrievalFunction.apply(entityId);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BannableEntity)) return false;
+
+        BannableEntity<?> that = (BannableEntity<?>) o;
+        return Objects.equals(entity.getIdLong(), that.entity.getIdLong());
+    }
+
     public T get() {
         return entity;
+    }
+
+    @Override
+    public long getIdLong() {
+        return entity.getIdLong();
     }
 
     public boolean isOfClass(Class<? extends ISnowflake> clazz) {
@@ -33,7 +48,7 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
     }
 
     @Override
-    public long getIdLong() {
-        return entity.getIdLong();
+    public int hashCode() {
+        return Objects.hash(entity);
     }
 }
