@@ -15,7 +15,7 @@ public class PermanentChannelCommand extends Command {
 
     public PermanentChannelCommand() {
         super(new CommandAliasCollectionBuilder()
-                .addAliasPart("perm", "p"));
+                .addAliasPart("perm", "p", "untemp"));
     }
 
     @Override

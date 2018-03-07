@@ -15,7 +15,7 @@ public class UnpermanentChannelCommand extends Command {
 
     public UnpermanentChannelCommand() {
         super(new CommandAliasCollectionBuilder()
-                .addAliasPart("unperm", "up"));
+                .addAliasPart("unperm", "up", "temp"));
     }
 
     @Override
