@@ -12,6 +12,7 @@ import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
 import java.awt.*;
 
+@AvailableCommand
 public class InfoCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(InfoCommand.class);
 

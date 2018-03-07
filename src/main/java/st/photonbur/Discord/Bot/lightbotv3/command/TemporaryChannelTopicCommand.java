@@ -11,6 +11,7 @@ import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
+@AvailableCommand
 public class TemporaryChannelTopicCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(TemporaryChannelTopicCommand.class);
 

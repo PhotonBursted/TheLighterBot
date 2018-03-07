@@ -27,7 +27,7 @@ public class AccesslistController {
      * Enum holding the types of actions which can be applied to the blacklist database.
      */
     private enum Action {
-        BLACKLIST, WHITELIST
+        BLACKLIST, UNBLACKLIST, UNWHITELIST, WHITELIST
     }
 
     /**
@@ -89,8 +89,8 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String blacklist(Guild g, BannableEntity entity) {
+        unwhitelist(g, entity);
         blacklist.putStoring(g, entity);
-        whitelist.removeStoring(g, entity);
 
         updateChannelPermOverrides(Action.BLACKLIST, g,
                 entity.isOfClass(User.class) ?
@@ -341,6 +341,22 @@ public class AccesslistController {
         whitelist.clear();
     }
 
+    public String unblacklist(Guild g, BannableEntity entity) {
+        blacklist.removeStoring(g, entity);
+
+        updateChannelPermOverrides(Action.WHITELIST, g, entity);
+
+        return confirmAction(Action.UNBLACKLIST, g, entity);
+    }
+
+    public String unwhitelist(Guild g, BannableEntity entity) {
+        whitelist.removeStoring(g, entity);
+
+        updateChannelPermOverrides(Action.WHITELIST, g, entity);
+
+        return confirmAction(Action.UNWHITELIST, g, entity);
+    }
+
     /**
      * Whitelists a {@link BannableEntity bannable entity} for a certain guild.
      *
@@ -349,7 +365,7 @@ public class AccesslistController {
      * @return A response string to print into the logs
      */
     public String whitelist(Guild g, BannableEntity entity) {
-        blacklist.removeStoring(g, entity);
+        unblacklist(g, entity);
         whitelist.putStoring(g, entity);
 
         updateChannelPermOverrides(Action.WHITELIST, g, entity);

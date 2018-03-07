@@ -2,6 +2,7 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
@@ -40,7 +41,7 @@ public class CommandParser extends ListenerAdapter {
      *
      * @param cmds The commands to register
      */
-    public void addCommand(Command... cmds) {
+    private void addCommand(Command... cmds) {
         Collections.addAll(commands, cmds);
     }
 
@@ -109,5 +110,27 @@ public class CommandParser extends ListenerAdapter {
                 targetCmd.prepareWithInput(input).executeCmd();
             }
         }
+    }
+
+    public void registerCommands() {
+        StringBuilder status = new StringBuilder("Registered the following commands:");
+        int commandCount, activatedCommandCount = 0;
+
+        Reflections r = new Reflections(Command.class.getPackage().getName());
+        Set<Class<?>> commandObjects = r.getTypesAnnotatedWith(AvailableCommand.class);
+        commandCount = commandObjects.size();
+
+        for (Class<?> cmdClass : commandObjects) {
+            try {
+                addCommand((Command) cmdClass.newInstance());
+                activatedCommandCount++;
+
+                status.append("\n - ").append(cmdClass.getSimpleName());
+            } catch (InstantiationException | IllegalAccessException ex) {
+                log.warn(String.format("Something went wrong adding command %s:", cmdClass.getSimpleName()), ex);
+            }
+        }
+
+        log.info(status.append(String.format("\n\nActivated %s/%s commands succesfully.", activatedCommandCount, commandCount)).toString());
     }
 }

@@ -10,6 +10,7 @@ import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.CategoryMap;
 
+@AvailableCommand
 public class TemporaryChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(TemporaryChannelCommand.class);
 

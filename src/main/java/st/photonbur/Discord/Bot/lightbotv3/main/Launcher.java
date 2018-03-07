@@ -3,9 +3,7 @@ package st.photonbur.Discord.Bot.lightbotv3.main;
 import net.dv8tion.jda.core.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import st.photonbur.Discord.Bot.lightbotv3.command.*;
-import st.photonbur.Discord.Bot.lightbotv3.command.accesslist.BlacklistCommand;
-import st.photonbur.Discord.Bot.lightbotv3.command.accesslist.WhitelistCommand;
+import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
 import st.photonbur.Discord.Bot.lightbotv3.controller.AccesslistController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
@@ -112,20 +110,7 @@ public class Launcher {
             }
         }
 
-        getCommandParser().addCommand(
-                new BlacklistCommand(),
-                new HelpCommand(),
-                new InfoCommand(),
-                new LinkChannelCommand(),
-                new PermanentChannelCommand(),
-                new SetCategoryCommand(),
-                new TemporaryChannelCommand(),
-                new TemporaryChannelSizeCommand(),
-                new TemporaryChannelTopicCommand(),
-                new UnlinkChannelCommand(),
-                new UnpermanentChannelCommand(),
-                new WhitelistCommand()
-        );
+        getCommandParser().registerCommands();
 
         sc = new Scanner(System.in);
         //noinspection StatementWithEmptyBody

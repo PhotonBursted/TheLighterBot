@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
+@AvailableCommand
 public class HelpCommand extends Command implements Paginator<MessageEmbed> {
     private static final Logger log = LoggerFactory.getLogger(HelpCommand.class);
 

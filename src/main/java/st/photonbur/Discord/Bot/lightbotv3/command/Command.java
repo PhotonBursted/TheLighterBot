@@ -68,10 +68,16 @@ public abstract class Command {
 
         if (l.getAccesslistController().isEffectivelyBlacklisted(ev.getMember())) {
             handleError(MessageContent.BLACKLISTED);
+            return;
         }
 
         if (!canBeExecutedBy(ev.getMember())) {
-            handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL, String.join(", ", Arrays.stream(getPermissionsRequired()).map(Enum::name).collect(Collectors.toList())).replaceFirst("(?s)(.*), ", "$1 and "));
+            handleError(MessageContent.PERMISSIONS_REQUIRED_GENERAL,
+                    String.join(", ", Arrays.stream(getPermissionsRequired())
+                            .map(Enum::name)
+                            .collect(Collectors.toList()))
+                            .replaceFirst("(?s)(.*), ", "$1 and "));
+            return;
         }
 
         execute();

@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+@AvailableCommand
 public class SetCategoryCommand extends Command implements Selector<Category> {
     private static final Logger log = LoggerFactory.getLogger(SetCategoryCommand.class);
 

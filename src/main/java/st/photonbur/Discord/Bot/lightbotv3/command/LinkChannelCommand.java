@@ -10,6 +10,7 @@ import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 
+@AvailableCommand
 public class LinkChannelCommand extends Command {
     private static final Logger log = LoggerFactory.getLogger(LinkChannelCommand.class);
 

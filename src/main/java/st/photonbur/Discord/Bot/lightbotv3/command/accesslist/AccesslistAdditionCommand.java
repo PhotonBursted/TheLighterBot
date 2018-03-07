@@ -1,12 +1,10 @@
 package st.photonbur.Discord.Bot.lightbotv3.command.accesslist;
 
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import org.slf4j.Logger;
-import st.photonbur.Discord.Bot.lightbotv3.command.Command;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
@@ -22,11 +20,11 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorBuilder;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-abstract class AccesslistAdditionCommand extends Command implements Selector<BannableEntity> {
+public abstract class AccesslistAdditionCommand extends AccesslistCommand implements Selector<BannableEntity> {
     private final String actionName;
     private final Logger log;
 
-    AccesslistAdditionCommand(CommandAliasCollectionBuilder aliasBuilder, String actionName, Logger log) {
+    protected AccesslistAdditionCommand(CommandAliasCollectionBuilder aliasBuilder, String actionName, Logger log) {
         super(aliasBuilder);
 
         this.actionName = actionName;
@@ -190,8 +188,4 @@ abstract class AccesslistAdditionCommand extends Command implements Selector<Ban
                         target.isOfClass(Role.class) ? ((Role) target.get()).getName() : ""),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
-
-    abstract String performAction(Guild guild, BannableEntity target);
-
-    abstract boolean performActionCheck(Guild guild, BannableEntity target);
 }
