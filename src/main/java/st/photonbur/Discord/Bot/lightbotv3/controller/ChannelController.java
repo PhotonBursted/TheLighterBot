@@ -12,8 +12,6 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import net.dv8tion.jda.core.requests.restaction.ChannelAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
-import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.CategoryMap;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.channel.LinkedChannelMap;
@@ -28,7 +26,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+
+import static net.dv8tion.jda.core.Permission.MESSAGE_READ;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class ChannelController extends ListenerAdapter {
@@ -57,74 +56,21 @@ public class ChannelController extends ListenerAdapter {
      */
     private final PermanentChannelMap permChannels;
 
-    /**
-     * Instance of the launcher for easy access to other classes
-     */
-    private final Launcher l;
-
     private static ChannelController instance;
 
-    private ChannelController(Launcher l) {
-        this.l = l;
-
+    private ChannelController() {
         categories = new CategoryMap();
         linkedChannels = new LinkedChannelMap();
         permChannels = new PermanentChannelMap();
         timeoutCandidates = new HashMap<>();
     }
 
-    public static ChannelController getInstance() {
-        return getInstance(null);
-    }
-
-    public static ChannelController getInstance(Launcher l) {
-        if (instance == null && !(l == null)) {
-            instance = new ChannelController(l);
+    public static synchronized ChannelController getInstance() {
+        if (instance == null) {
+            instance = new ChannelController();
         }
 
         return instance;
-    }
-
-    /**
-     * Applies the properties of an accesslist to a certain channel right before it is constructed.
-     *
-     * @param g      The guild the channel is in
-     * @param action The action representing the channel to apply the accesslist to
-     * @param perms  The permissions to apply
-     */
-    private void applyAccessList(Guild g, ChannelAction action, Permission... perms) {
-        // Figures out the blacklist present in this guild
-        Set<BannableEntity> blacklist = l.getAccesslistController().getBlacklistForGuild(g);
-        Set<BannableEntity> whitelist = l.getAccesslistController().getWhitelistForGuild(g);
-
-        if (blacklist != null && whitelist != null) {
-            blacklist.removeAll(l.getAccesslistController().getWhitelistForGuild(g));
-            whitelist.removeAll(l.getAccesslistController().getBlacklistForGuild(g));
-
-            log.info("bl: " + blacklist.stream().map(e -> e.get().getId()).collect(Collectors.joining(", ")) + "\n" +
-                     "wl: " + whitelist.stream().map(e -> e.get().getId()).collect(Collectors.joining(", ")));
-        }
-
-
-        if (blacklist != null) {
-            blacklist.forEach(item -> {
-                if (item.isOfClass(Role.class)) {
-                    action.addPermissionOverride((Role) item.get(), 0L, Permission.getRaw(perms));
-                } else if (item.isOfClass(User.class)) {
-                    action.addPermissionOverride(g.getMember((User) item.get()), 0L, Permission.getRaw(perms));
-                }
-            });
-        }
-
-        if (whitelist != null) {
-            whitelist.forEach(item -> {
-                if (item.isOfClass(Role.class)) {
-                    action.addPermissionOverride((Role) item.get(), Permission.getRaw(perms), 0L);
-                } else if (item.isOfClass(User.class)) {
-                    action.addPermissionOverride(g.getMember((User) item.get()), Permission.getRaw(perms), 0L);
-                }
-            });
-        }
     }
 
     /**
@@ -150,8 +96,6 @@ public class ChannelController extends ListenerAdapter {
         // Creates an intermediate action which only contains the name of the new category.
         ChannelAction cAction = g.getController().createCategory("Temp: " + name);
 
-        applyAccessList(g, cAction, Permission.MESSAGE_READ);
-
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
         cAction.setParent(categories.get(g))
@@ -174,15 +118,10 @@ public class ChannelController extends ListenerAdapter {
     public void createTempTextChannel(GuildMessageReceivedEvent ev, String name, Category parent, Consumer<TextChannel> callback) {
         // Creates an intermediate action which only contains the name of the new text channel.
         ChannelAction tcAction = ev.getGuild().getController().createTextChannel(Utils.ircify("tdc-" + name))
-                .addPermissionOverride(ev.getGuild().getPublicRole(),
-                        Permission.getRaw(Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_HISTORY),
-                        0
-                ).addPermissionOverride(ev.getGuild().getSelfMember(),
+                .addPermissionOverride(ev.getGuild().getSelfMember(),
                         Permission.getRaw(Permission.MESSAGE_HISTORY, Permission.MANAGE_CHANNEL, Permission.MESSAGE_READ, Permission.MESSAGE_WRITE, Permission.MESSAGE_MANAGE),
                         0
                 );
-
-        applyAccessList(ev.getGuild(), tcAction, Permission.MESSAGE_READ);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
@@ -206,11 +145,9 @@ public class ChannelController extends ListenerAdapter {
     public void createTempVoiceChannel(GuildMessageReceivedEvent ev, String name, Category parent, Consumer<VoiceChannel> callback) {
         // Creates an intermediate action which only contains the name of the new voice channel.
         ChannelAction vcAction = ev.getGuild().getController().createVoiceChannel("[T] " + name)
-                .addPermissionOverride(ev.getGuild().getPublicRole(),
-                        Permission.getRaw(Permission.VIEW_CHANNEL),
+                .addPermissionOverride(ev.getGuild().getSelfMember(),
+                        Permission.getRaw(Permission.MANAGE_CHANNEL, Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT),
                         0);
-
-        applyAccessList(ev.getGuild(), vcAction, Permission.VIEW_CHANNEL);
 
         // Finally construct the category object.
         // This construction is split so it only requires one request instead of multiple.
@@ -255,14 +192,15 @@ public class ChannelController extends ListenerAdapter {
         }
 
         // Try to remove all channels involved
-        boolean cleaned = deleteLinkedChannel(vc) && deleteLinkedChannel(linkedChannels.getForVoiceChannel(vc)) &&
-                ((categories.containsKey(vc.getGuild()) && categories.get(vc.getGuild()) != null) || deleteLinkedChannel(vc.getParent()));
+        boolean cleaned = ((categories.containsKey(vc.getGuild()) && categories.get(vc.getGuild()) != null) ||
+                deleteLinkedChannel(vc.getParent()) &&
+                deleteLinkedChannel(vc) && deleteLinkedChannel(linkedChannels.getForVoiceChannel(vc)));
 
         // Log feedback
         if (cleaned) {
             log.info("Successfully cleaned up group " + vc.getName() + "!");
         } else {
-            log.error("Something went wrong cleaning up group " + vc.getName() + "...");
+            log.warn("Something went wrong cleaning up group " + vc.getName() + "...");
         }
     }
 
@@ -489,9 +427,8 @@ public class ChannelController extends ListenerAdapter {
         if (isLinked(vc)) {
             if (Utils.hasLimit(vc)) {
                 Utils.getPO(linkedChannels.getForVoiceChannel(vc), m,
-                        po -> po.getManagerUpdatable()
-                                .grant(Permission.MESSAGE_READ)
-                                .update()
+                        po -> po.getManager()
+                                .grant(MESSAGE_READ)
                                 .reason("The channel was joined and is limited, requiring members to see the linked text channel")
                                 .queue());
             }
@@ -532,7 +469,7 @@ public class ChannelController extends ListenerAdapter {
                 Utils.getPO(linkedChannels.getForVoiceChannel(vc), m,
                         po -> Utils.removePermissionsFrom(po,
                                 "The channel was left and is limited, requiring non-members to not see the associated text channel",
-                                Permission.MESSAGE_READ));
+                                MESSAGE_READ));
             }
         }
     }
