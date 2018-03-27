@@ -18,16 +18,13 @@ import java.util.Scanner;
 public class Launcher {
     private static final Logger log = LoggerFactory.getLogger(Launcher.class);
 
-    public static final String VERSION = "3.1.3";
+    public static final String VERSION = "3.2.0";
 
     private static Launcher instance;
     private final Properties props = new Properties();
     private Scanner sc;
-    private ChannelPermissionController channelPermissionController;
 
-    private Launcher() {
-
-    }
+    private Launcher() { }
 
     /**
      * As part of the Singleton design pattern, no clones of this instance are permitted.
