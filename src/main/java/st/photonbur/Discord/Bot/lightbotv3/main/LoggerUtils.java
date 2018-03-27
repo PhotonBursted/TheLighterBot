@@ -51,10 +51,10 @@ public class LoggerUtils extends ListenerAdapter {
             // Log a detailed message including author and source
             log.info(String.format("%s\n" +
                             " - Author: %s#%s (%s)\n" +
-                            " - Source: %s",
+                            " - Source: %s (G: %s (%d))",
                     msg,
                     ev.getAuthor().getName(), ev.getAuthor().getDiscriminator(), ev.getAuthor().getId(),
-                    ev.getChannel().getName()));
+                    ev.getChannel().getName(), ev.getGuild().getName(), ev.getGuild().getIdLong()));
 
             // Delete the message if permissions allow it
             if (ev.getGuild().getSelfMember().hasPermission(ev.getChannel(), Permission.MESSAGE_MANAGE)) {
