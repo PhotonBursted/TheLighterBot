@@ -288,10 +288,14 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getAccesslistController().blacklist(g, new BannableRole(entityId));
+                                BannableRole role = new BannableRole(entityId);
+
+                                if (role.get() != null) l.getAccesslistController().blacklist(g, role);
                                 break;
                             case "user":
-                                l.getAccesslistController().blacklist(g, new BannableUser(entityId));
+                                BannableUser user = new BannableUser(entityId);
+
+                                if (user.get() != null) l.getAccesslistController().blacklist(g, user);
                                 break;
                             default:
                         }
@@ -383,10 +387,14 @@ public class FileController {
 
                         switch (entityType) {
                             case "role":
-                                l.getAccesslistController().whitelist(g, new BannableRole(entityId));
+                                BannableRole role = new BannableRole(entityId);
+
+                                if (role.get() != null) l.getAccesslistController().whitelist(g, new BannableRole(entityId));
                                 break;
                             case "user":
-                                l.getAccesslistController().whitelist(g, new BannableUser(entityId));
+                                BannableUser user = new BannableUser(entityId);
+
+                                if (user.get() != null) l.getAccesslistController().whitelist(g, new BannableUser(entityId));
                                 break;
                             default:
                         }
