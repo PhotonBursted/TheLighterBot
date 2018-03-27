@@ -20,7 +20,7 @@ public class Utils {
      * @param input The {@link LinkedBlockingQueue} to drain
      * @return The string consisting of all queue elements concatenated
      */
-    public static String drainQueueToString(LinkedBlockingQueue<String> input) {
+    public static String drainQueueToString(Queue<String> input) {
         // Return the elements concatenated by spaces
         return input.stream().collect(Collectors.joining(" "));
     }
@@ -50,15 +50,15 @@ public class Utils {
      */
     @SuppressWarnings("Duplicates")
     public static void getPO(Channel c, Member m, Consumer<PermissionOverride> callback) {
-        if (c.getPermissionOverride(m) != null) {
-            if (callback != null) callback.accept(c.getPermissionOverride(m));
+        PermissionOverride po = c.getPermissionOverride(m);
+
+        if (po != null) {
+            if (callback != null) callback.accept(po);
         } else {
             c.createPermissionOverride(m)
                     .reason("A permission override was required for a bot related action")
-                    .queue((po) -> {
-                        if (callback != null) {
-                            callback.accept(po);
-                        }
+                    .queue((cpo) -> {
+                        if (callback != null) callback.accept(cpo);
                     });
         }
     }
@@ -72,15 +72,15 @@ public class Utils {
      */
     @SuppressWarnings("Duplicates")
     public static void getPO(Channel c, Role r, Consumer<PermissionOverride> callback) {
-        if (c.getPermissionOverride(r) != null) {
-            if (callback != null) callback.accept(c.getPermissionOverride(r));
+        PermissionOverride po = c.getPermissionOverride(r);
+
+        if (po != null) {
+            if (callback != null) callback.accept(po);
         } else {
             c.createPermissionOverride(r)
                     .reason("A permission override was required for a bot related action")
-                    .queue((po) -> {
-                        if (callback != null) {
-                            callback.accept(po);
-                        }
+                    .queue((cpo) -> {
+                        if (callback != null) callback.accept(cpo);
                     });
         }
     }
@@ -143,10 +143,16 @@ public class Utils {
         // If the total amount of allowed and denied permissions adds up to the permissions to be cleared, destroy the override.
         // Clearing these permissions would just leave an empty override without any use anyway.
         // Otherwise, try to clear all permissions which aren't needed anymore.
-        if (Stream.concat(po.getAllowed().stream(), po.getDenied().stream()).filter(p -> Arrays.stream(permsToRemove).anyMatch(op -> op.equals(p))).count() == permsToRemove.length) {
+        if (Stream.concat(po.getAllowed().stream(), po.getDenied().stream())
+                .filter(p -> Arrays.stream(permsToRemove).anyMatch(op -> op.equals(p)))
+                .count() == permsToRemove.length &&
+                !(po.isRoleOverride() && po.getRole().getGuild().getPublicRole().equals(po.getRole()))) {
             po.delete().reason(reason).queue();
         } else {
-            po.getManagerUpdatable().clear(permsToRemove).update().reason(reason).queue();
+            po.getManager()
+                    .clear(permsToRemove)
+                    .reason(reason)
+                    .queue();
         }
     }
 
