@@ -5,7 +5,6 @@ import net.dv8tion.jda.core.entities.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
-import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.main.LoggerUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.map.CategoryMap;
@@ -33,12 +32,18 @@ public class TemporaryChannelCommand extends Command {
         } else {
             // Create voice and text channel
             l.getChannelController().createTempVoiceChannel(ev, channelName, parent,
-                    vc -> l.getChannelController().createTempTextChannel(ev, channelName, parent,
-                            tc -> {
-                                // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
-                                l.getChannelController().getLinkedChannels().putStoring(tc, vc);
-                                l.getChannelController().setNewChannelTimeout(vc);
-                            }));
+                    vc -> {
+                        l.getChannelPermissionController().changeToPublicFromNew(vc, Permission.VIEW_CHANNEL);
+
+                        l.getChannelController().createTempTextChannel(ev, channelName, parent,
+                                tc -> {
+                                    l.getChannelPermissionController().changeToPublicFromNew(tc, Permission.MESSAGE_READ);
+
+                                    // Link the channels together and make sure to delete the voice channel after 10 seconds of inactivity
+                                    l.getChannelController().getLinkedChannels().putStoring(tc, vc);
+                                    l.getChannelController().setNewChannelTimeout(vc);
+                                });
+                    });
         }
     }
 
@@ -68,7 +73,7 @@ public class TemporaryChannelCommand extends Command {
             // Determine if a category should be created or not.
             // If a default category has been specified it should point towards that.
             if (categories.containsKey(ev.getGuild()) && categories.get(ev.getGuild()) != null &&
-                        ev.getGuild().getCategories().stream().anyMatch(c -> c.getId().equals(categories.get(ev.getGuild()).getId()))) {
+                    ev.getGuild().getCategories().stream().anyMatch(c -> c.getId().equals(categories.get(ev.getGuild()).getId()))) {
                 parent = categories.get(ev.getGuild());
             } else {
                 // A category was specified but not found.
@@ -83,9 +88,9 @@ public class TemporaryChannelCommand extends Command {
             // Send feedback to the user
             l.getDiscordController().sendMessage(ev,
                     String.format("%s succesfully added temporary channel **%s**.\n" +
-                            "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds.",
+                                    "This channel will be deleted as soon as every person has left or when nobody has joined within 10 seconds.",
                             ev.getMember().getAsMention(), channelName),
-                    DiscordController.AUTOMATIC_REMOVAL_INTERVAL
+                    10
             );
             log.info("Created group " + channelName + "!");
         }
@@ -98,7 +103,7 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     protected Permission[] getPermissionsRequired() {
-        return new Permission[] {};
+        return new Permission[]{};
     }
 
     @Override

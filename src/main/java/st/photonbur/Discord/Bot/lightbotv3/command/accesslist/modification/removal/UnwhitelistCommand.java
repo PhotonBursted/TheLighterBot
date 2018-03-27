@@ -1,4 +1,4 @@
-package st.photonbur.Discord.Bot.lightbotv3.command.accesslist;
+package st.photonbur.Discord.Bot.lightbotv3.command.accesslist.modification.removal;
 
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Role;
@@ -9,28 +9,28 @@ import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionB
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
 
 @AvailableCommand
-public class WhitelistCommand extends AccesslistAdditionCommand {
-    public WhitelistCommand() {
+public class UnwhitelistCommand extends AccesslistRemovalCommand {
+    public UnwhitelistCommand() {
         super(new CommandAliasCollectionBuilder()
-                .addAliasPart("whitelist", "wl"),
-                "whitelist",
-                LoggerFactory.getLogger(WhitelistCommand.class));
+                        .addAliasPart("unwhitelist", "uwl"),
+                "unwhitelist", "whitelist",
+                LoggerFactory.getLogger(UnwhitelistCommand.class));
     }
 
     @Override
     protected String performAction(Guild guild, BannableEntity target) {
-        return l.getAccesslistController().whitelist(guild, target);
+        return l.getAccesslistController().unwhitelist(guild, target);
     }
 
     @Override
     protected boolean performActionCheck(Guild guild, BannableEntity target) {
         if (target.isOfClass(User.class)) {
-            return l.getAccesslistController().isEffectivelyWhitelisted(guild.getMemberById(target.getIdLong()));
+            return !l.getAccesslistController().isEffectivelyWhitelisted(guild.getMemberById(target.getIdLong()));
         }
 
         //noinspection SimplifiableIfStatement
         if (target.isOfClass(Role.class)) {
-            return l.getAccesslistController().isWhitelisted(guild.getRoleById(target.getIdLong()));
+            return !l.getAccesslistController().isWhitelisted(guild.getRoleById(target.getIdLong()));
         }
 
         return false;

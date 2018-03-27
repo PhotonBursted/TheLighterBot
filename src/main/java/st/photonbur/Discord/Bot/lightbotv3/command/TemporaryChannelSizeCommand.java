@@ -1,7 +1,6 @@
 package st.photonbur.Discord.Bot.lightbotv3.command;
 
 import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import org.slf4j.Logger;
@@ -60,9 +59,8 @@ public class TemporaryChannelSizeCommand extends Command {
         int intLimit = Integer.parseInt(limit);
 
         // Get the user limit and set the new value
-        vc.getManagerUpdatable().getUserLimitField()
-                .setValue(intLimit)
-                .update()
+        vc.getManager()
+                .setUserLimit(intLimit)
                 .reason("A command was issued from a temporary channel")
                 .queue();
 
@@ -80,45 +78,9 @@ public class TemporaryChannelSizeCommand extends Command {
 
             // If the limit is 0, this means the limit was removed
             if (intLimit == 0) {
-                // Remove all permissions that were blocking other users from seeing the channel
-                Utils.getPO(tc, tc.getGuild().getPublicRole(), po ->
-                        Utils.removePermissionsFrom(po,
-                                "The channel had its limit removed by a command from a temporary channel",
-                                Permission.MESSAGE_READ));
-                Utils.getPO(tc, tc.getGuild().getSelfMember(), po ->
-                        Utils.removePermissionsFrom(po,
-                                "The channel had its limit removed by a command from a temporary channel",
-                                Permission.MESSAGE_READ));
-
-                for (Member m : vc.getMembers()) {
-                    Utils.getPO(tc, m, po ->
-                            Utils.removePermissionsFrom(po,
-                                    "The channel had its limit removed by a command from a temporary channel",
-                                    Permission.MESSAGE_READ));
-                }
+                l.getChannelPermissionController().changeToPublicFromPrivate(tc, vc);
             } else {
-                // Revoke access for non-members of the voice channel should the channel be limited
-                Utils.getPO(tc, ev.getGuild().getPublicRole(), po -> po
-                        .getManagerUpdatable()
-                        .deny(Permission.MESSAGE_READ)
-                        .update()
-                        .reason("The channel was limited by a command from a temporary channel.")
-                        .queue());
-                Utils.getPO(tc, ev.getGuild().getSelfMember(), po -> po
-                        .getManagerUpdatable()
-                        .grant(Permission.MESSAGE_READ)
-                        .update()
-                        .reason("The channel was limited by a command from a temporary channel.")
-                        .queue());
-
-                for (Member m : vc.getMembers()) {
-                    Utils.getPO(tc, m, po -> po
-                            .getManagerUpdatable()
-                            .grant(Permission.MESSAGE_READ)
-                            .update()
-                            .reason("The channel was limited requiring the members to have read permissions")
-                            .queue());
-                }
+                l.getChannelPermissionController().changeToPrivateFromPublic(tc, vc);
             }
         }
     }

@@ -27,7 +27,20 @@ public class AccesslistController {
      * Enum holding the types of actions which can be applied to the blacklist database.
      */
     private enum Action {
-        BLACKLIST, UNBLACKLIST, UNWHITELIST, WHITELIST
+        BLACKLIST("blacklisted"),
+        UNBLACKLIST("removed from the blacklist"),
+        UNWHITELIST("removed from the whitelist"),
+        WHITELIST("whitelisted");
+
+        private final String description;
+
+        Action(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 
     /**
@@ -40,7 +53,7 @@ public class AccesslistController {
      */
     private final WhitelistMap whitelist;
 
-    private final static String REASON = "The server's blacklist changed and required a permission update";
+    private final static String REASON = "The server's access list changed and required a permission update";
 
     /**
      * The only AccesslistController instance permitted to exist.
@@ -92,10 +105,7 @@ public class AccesslistController {
         unwhitelist(g, entity);
         blacklist.putStoring(g, entity);
 
-        updateChannelPermOverrides(Action.BLACKLIST, g,
-                entity.isOfClass(User.class) ?
-                        EntityConverter.toPermissible((BannableUser) entity, g) :
-                        EntityConverter.toPermissible((BannableRole) entity));
+        updateChannelPermOverrides(Action.BLACKLIST, g, entity);
 
         return confirmAction(Action.BLACKLIST, g, entity);
     }
@@ -110,11 +120,11 @@ public class AccesslistController {
     private static String confirmAction(Action action, Guild g, BannableEntity entity) {
         String entityType = entity.get().getClass().getSimpleName().toLowerCase().replace("impl", "");
 
-        return String.format("%sed a %s in guild \"%s\":\n" +
+        return String.format("A %s was %s in guild \"%s\":\n" +
                         " - Guild ID: %s\n" +
                         " - %s ID: %s (%s)",
-                StringUtils.capitalize(action.name().toLowerCase()),
-                entityType, g.getName(), g.getIdLong(),
+                entityType,
+                action.getDescription().toLowerCase(), g.getName(), g.getIdLong(),
                 StringUtils.capitalize(entityType), entity.getIdLong(),
                 entity.isOfClass(User.class) ? Utils.userAsString((User) entity.get()) : g.getRoleById(entity.getId()).getName());
     }
@@ -260,83 +270,102 @@ public class AccesslistController {
                 EntityConverter.toPermissible((BannableRole) entity));
     }
 
+    //TODO Convert to use roles
     private void updateChannelPermOverrides(Action action, Guild guild, PermissibleEntity entity) {
         l.getChannelController().getLinkedChannels().entrySet().stream()
-                .filter(entry -> entry.getKey().getGuild().equals(guild))
+                .filter(entry -> entry.getKey().getGuild().getIdLong() == guild.getIdLong())
                 .forEach(entry -> {
-                    if (action == Action.BLACKLIST) {
-                        Utils.getPO(entry.getKey(), entity, po -> {
-                            if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
-                                po.getManagerUpdatable()
-                                        .deny(Permission.MESSAGE_READ)
-                                        .update()
+                    switch (action) {
+                        case BLACKLIST:
+                            entry.getKey().getManager().putPermissionOverride(entity,
+                                    0L,
+                                    Permission.getRaw(Permission.MESSAGE_READ))
+                                    .reason(REASON).queue();
+
+                            entry.getKey().getManager().putPermissionOverride(entity,
+                                    0L,
+                                    Permission.getRaw(Permission.VIEW_CHANNEL))
+                                    .reason(REASON).queue();
+
+                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
+                                entry.getKey().getParent().getManager().putPermissionOverride(entity,
+                                        0L,
+                                        Permission.getRaw(Permission.VIEW_CHANNEL))
                                         .reason(REASON).queue();
                             }
-                        });
-
-                        Utils.getPO(entry.getKey(), entity, po -> {
-                            if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                po.getManagerUpdatable()
-                                        .deny(Permission.VIEW_CHANNEL)
-                                        .update()
-                                        .reason(REASON).queue();
-                            }
-                        });
-
-                        if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
-                            Utils.getPO(entry.getKey().getParent(), entity, po -> {
-                                if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                    po.getManagerUpdatable()
-                                            .deny(Permission.VIEW_CHANNEL)
-                                            .update()
+                            break;
+                        case WHITELIST:
+                            Utils.getPO(entry.getKey(), entity, po -> {
+                                if (!po.getDenied().contains(Permission.MESSAGE_READ)) {
+                                    po.getManager()
+                                            .deny(Permission.MESSAGE_READ)
                                             .reason(REASON).queue();
                                 }
                             });
-                        }
-                    } else {
-                        PermissionOverride poT = null, poC = null;
-                        List<PermissionOverride> poVs = new ArrayList<>();
 
-                        if (entity.isOfClass(Role.class)) {
-                            poT = entry.getKey().getPermissionOverride((Role) entity);
+                            Utils.getPO(entry.getKey(), entity, po -> {
+                                if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                    po.getManager()
+                                            .deny(Permission.VIEW_CHANNEL)
+                                            .reason(REASON).queue();
+                                }
+                            });
 
-                            for (VoiceChannel vc : entry.getValue()) {
-                                poVs.add(vc.getPermissionOverride((Role) entity));
+                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
+                                Utils.getPO(entry.getKey().getParent(), entity, po -> {
+                                    if (!po.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                        po.getManager()
+                                                .deny(Permission.VIEW_CHANNEL)
+                                                .reason(REASON).queue();
+                                    }
+                                });
                             }
-                        } else if (entity.isOfClass(User.class)) {
-                            poT = entry.getKey().getPermissionOverride(guild.getMember((User) entity));
+                            break;
+                        default:
+                            PermissionOverride poT = null, poC = null;
+                            List<PermissionOverride> poVs = new ArrayList<>();
 
-                            for (VoiceChannel vc : entry.getValue()) {
-                                poVs.add(vc.getPermissionOverride(guild.getMember((User) entity)));
-                            }
-                        }
-
-                        if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
-                            Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
-                        }
-
-                        for (PermissionOverride poV : poVs) {
-                            if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
-                            }
-                        }
-
-                        if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
                             if (entity.isOfClass(Role.class)) {
-                                poC = entry.getKey().getParent().getPermissionOverride((Role) entity);
+                                poT = entry.getKey().getPermissionOverride((Role) entity.get());
+
+                                for (VoiceChannel vc : entry.getValue()) {
+                                    poVs.add(vc.getPermissionOverride((Role) entity.get()));
+                                }
                             } else if (entity.isOfClass(User.class)) {
-                                poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity));
+                                poT = entry.getKey().getPermissionOverride(guild.getMember((User) entity.get()));
+
+                                for (VoiceChannel vc : entry.getValue()) {
+                                    poVs.add(vc.getPermissionOverride(guild.getMember((User) entity.get())));
+                                }
                             }
 
-                            if (poC != null && poC.getDenied().contains(Permission.VIEW_CHANNEL)) {
-                                Utils.removePermissionsFrom(poC, REASON, Permission.VIEW_CHANNEL);
+                            if (poT != null && poT.getDenied().contains(Permission.MESSAGE_READ)) {
+                                Utils.removePermissionsFrom(poT, REASON, Permission.MESSAGE_READ);
                             }
-                        }
+
+                            for (PermissionOverride poV : poVs) {
+                                if (poV != null && poV.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                    Utils.removePermissionsFrom(poV, REASON, Permission.VIEW_CHANNEL);
+                                }
+                            }
+
+                            if (entry.getKey().getParent() != null && !l.getChannelController().getCategories().containsKey(guild)) {
+                                if (entity.isOfClass(Role.class)) {
+                                    poC = entry.getKey().getParent().getPermissionOverride((Role) entity.get());
+                                } else if (entity.isOfClass(User.class)) {
+                                    poC = entry.getKey().getParent().getPermissionOverride(guild.getMember((User) entity.get()));
+                                }
+
+                                if (poC != null && poC.getDenied().contains(Permission.VIEW_CHANNEL)) {
+                                    Utils.removePermissionsFrom(poC, REASON, Permission.VIEW_CHANNEL);
+                                }
+                            }
+                            break;
                     }
                 });
     }
 
-    public void reset() {
+    void reset() {
         blacklist.clear();
         whitelist.clear();
     }
@@ -344,7 +373,7 @@ public class AccesslistController {
     public String unblacklist(Guild g, BannableEntity entity) {
         blacklist.removeStoring(g, entity);
 
-        updateChannelPermOverrides(Action.WHITELIST, g, entity);
+        updateChannelPermOverrides(Action.UNBLACKLIST, g, entity);
 
         return confirmAction(Action.UNBLACKLIST, g, entity);
     }
@@ -352,7 +381,7 @@ public class AccesslistController {
     public String unwhitelist(Guild g, BannableEntity entity) {
         whitelist.removeStoring(g, entity);
 
-        updateChannelPermOverrides(Action.WHITELIST, g, entity);
+        updateChannelPermOverrides(Action.UNWHITELIST, g, entity);
 
         return confirmAction(Action.UNWHITELIST, g, entity);
     }

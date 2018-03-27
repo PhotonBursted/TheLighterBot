@@ -1,10 +1,12 @@
-package st.photonbur.Discord.Bot.lightbotv3.command.accesslist;
+package st.photonbur.Discord.Bot.lightbotv3.command.accesslist.modification;
 
 import net.dv8tion.jda.core.Permission;
+import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.User;
 import org.slf4j.Logger;
+import st.photonbur.Discord.Bot.lightbotv3.command.Command;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
@@ -20,14 +22,22 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.selector.SelectorBuilder;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public abstract class AccesslistAdditionCommand extends AccesslistCommand implements Selector<BannableEntity> {
-    private final String actionName;
-    private final Logger log;
+public abstract class AccesslistModificationCommand extends Command implements Selector<BannableEntity> {
+    protected final String targetAccesslist;
+    private final boolean isAdditionAction;
+    protected final Logger log;
+    private final String primaryCommandName;
 
-    protected AccesslistAdditionCommand(CommandAliasCollectionBuilder aliasBuilder, String actionName, Logger log) {
+    protected AccesslistModificationCommand(CommandAliasCollectionBuilder aliasBuilder,
+                                            String primaryCommandName,
+                                            String targetAccesslist,
+                                            boolean isAdditionAction,
+                                            Logger log) {
         super(aliasBuilder);
 
-        this.actionName = actionName;
+        this.targetAccesslist = targetAccesslist;
+        this.primaryCommandName = primaryCommandName;
+        this.isAdditionAction = isAdditionAction;
         this.log = log;
     }
 
@@ -35,8 +45,10 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
     protected void execute() {
         // Check if the input actually had enough arguments
         if (input.size() < 1) {
-            handleError(String.format("You didn't supply the ID of the entity to %1$s!\nPlease use `+%1$s <idTo%2$s>`.",
-                    actionName, StringUtils.capitalize(actionName)));
+            handleError(String.format("You didn't supply the ID of the entity to %s!\nPlease use `+%s <idTo%s>`.",
+                    getActionDescription("%s", "remove from the %s"),
+                    primaryCommandName,
+                    StringUtils.capitalize(targetAccesslist)));
             return;
         }
 
@@ -55,14 +67,14 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
 
                 // See if there were any search results
                 if (candidates.size() <= 0) {
-                    handleError(String.format("No user was found in this server having name **%s!**", targetName));
+                    handleError(String.format("No user was found in this server having name **%s**!", targetName));
                     return;
                 }
 
                 // If there was only one user found, perform the blacklist.
                 // Otherwise, generate a selector and let the user decide what the target was
                 if (candidates.size() == 1) {
-                    performAccessListModification(new BannableUser(candidates.get(0).getUser()));
+                    performAccesslistModification(new BannableUser(candidates.get(0).getUser()));
                 } else {
                     LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
                     candidates.forEach(c -> candidateMap.put(Utils.userAsString(c.getUser()), new BannableUser(c.getUser())));
@@ -79,14 +91,14 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
 
                 // See if there were any search results
                 if (candidates.size() <= 0) {
-                    handleError(String.format("The role you searched for (with name **%s**) couldn't be found!", targetName));
+                    handleError(String.format("No role was found in this server having name **%s**!", targetName));
                     return;
                 }
 
                 // If there was only one user found, perform the blacklist.
                 // Otherwise, generate a selector and let the user decide what the target was
                 if (candidates.size() == 1) {
-                    performAccessListModification(new BannableRole(candidates.get(0)));
+                    performAccesslistModification(new BannableRole(candidates.get(0)));
                 } else {
                     LinkedHashMap<String, BannableEntity> candidateMap = new LinkedHashMap<>();
                     candidates.forEach(c -> candidateMap.put(c.getName(), new BannableRole(c)));
@@ -109,26 +121,26 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
                 }
 
                 if (targetEntity == null) {
-                    handleError(String.format("The ID you supplied (**`%s`**) was neither a role or user in this server!",
+                    handleError(String.format("The ID you supplied (`%s`) was neither a role or user in this server!",
                             target));
                     return;
                 }
 
                 // Detect if the id specified is already blacklisted
                 if (performActionCheck(ev.getGuild(), targetEntity)) {
-                    handleError(String.format("The entity you tried to %1$s is already %1$sed for this server!",
-                            actionName));
+                    handleError(String.format("The entity you tried to %s is already %sed for this server!",
+                            getActionDescription("%s", "remove from the %s"),
+                            targetAccesslist));
                     return;
                 }
 
-                performAccessListModification(targetEntity);
+                performAccesslistModification(targetEntity);
                 break;
         }
     }
 
-    @Override
-    protected String getDescription() {
-        return StringUtils.capitalize(actionName) + "s a role or user.";
+    private String getActionDescription(String additionAction, String removalAction) {
+        return String.format((isAdditionAction ? additionAction : removalAction), targetAccesslist);
     }
 
     @Override
@@ -138,7 +150,7 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
 
     @Override
     protected String getUsage() {
-        return "{}" + actionName + " <searchTerm>\n" +
+        return "{}" + primaryCommandName + " <searchTerm>\n" +
                 "    <searchTerm> can be any of:\n" +
                 "       - <search> - searches for a role/user ID\n" +
                 "       - user:<search> - searches for a user with the name of <searchTerm>\n" +
@@ -149,43 +161,55 @@ public abstract class AccesslistAdditionCommand extends AccesslistCommand implem
     @Override
     public void onSelection(SelectionEvent<BannableEntity> selEv) {
         if (!selEv.selectionWasMade()) {
-            handleError(String.format("The %s action was cancelled.", actionName));
+            handleError(String.format("The %s action was cancelled.",
+                    getActionDescription("%s", "%s removal")));
             return;
         }
 
-        BannableEntity target = selEv.getSelectedOption();
+        // If the target isn't blacklisted yet, do so, and provide feedback
+        performAccesslistModification(selEv.getSelectedOption());
+    }
 
-        if (!performActionCheck(ev.getGuild(), target)) {
+    private void performAccesslistModification(BannableEntity target) {
+        if (performActionCheck(ev.getGuild(), target)) {
             if (target.isOfClass(User.class)) {
-                handleError(String.format("User **%s** is already %sed for this server!",
-                        Utils.userAsString((User) target.get()), actionName));
+                User targetUser = (User) target.get();
+                if (targetUser.equals(l.getBot().getSelfUser())) {
+                    handleError("Access list operations cannot be executed on the bot itself!");
+                    return;
+                }
+
+                handleError(String.format("User **%s** is already %s for this server!",
+                        Utils.userAsString((User) target.get()),
+                        getActionDescription("%sed", "not present in the %s")));
                 return;
             }
 
             if (target.isOfClass(Role.class)) {
-                handleError(String.format("Role **%s** is already %sed for this server!",
-                        ((Role) target.get()).getName(), actionName));
+                handleError(String.format("Role **%s** is already %s for this server!",
+                        ((Role) target.get()).getName(),
+                        getActionDescription("%sed", "not present in the %s")));
                 return;
             }
 
-            handleError(String.format("This entity is already %sed for this server!",
-                    actionName));
-        } else {
-            // If the target isn't blacklisted yet, do so, and provide feedback
-            performAccessListModification(target);
+            handleError(String.format("This entity is already %s for this server!",
+                    getActionDescription("%sed", "not present in the %s")));
+            return;
         }
-    }
 
-    private void performAccessListModification(BannableEntity target) {
         String response = performAction(ev.getGuild(), target);
 
         LoggerUtils.logAndDelete(log, response);
         l.getDiscordController().sendMessage(ev,
-                String.format("Successfully %sed %s **%s**!",
-                        actionName,
-                        target.get().getClass().getSimpleName().toLowerCase().replace("impl", ""),
+                String.format("%s **%s** was successfully %s!",
+                        StringUtils.capitalize(target.get().getClass().getSimpleName().toLowerCase().replace("impl", "")),
                         target.isOfClass(User.class) ? Utils.userAsString((User) target.get()) :
-                        target.isOfClass(Role.class) ? ((Role) target.get()).getName() : ""),
+                        target.isOfClass(Role.class) ? String.format("`%s`", ((Role) target.get()).getName()) : "",
+                        getActionDescription("%sed", "removed from the %s")),
                 DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
     }
+
+    protected abstract String performAction(Guild guild, BannableEntity target);
+
+    protected abstract boolean performActionCheck(Guild guild, BannableEntity target);
 }

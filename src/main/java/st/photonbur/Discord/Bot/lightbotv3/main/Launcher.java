@@ -4,10 +4,7 @@ import net.dv8tion.jda.core.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.CommandParser;
-import st.photonbur.Discord.Bot.lightbotv3.controller.AccesslistController;
-import st.photonbur.Discord.Bot.lightbotv3.controller.ChannelController;
-import st.photonbur.Discord.Bot.lightbotv3.controller.DiscordController;
-import st.photonbur.Discord.Bot.lightbotv3.controller.FileController;
+import st.photonbur.Discord.Bot.lightbotv3.controller.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,6 +23,7 @@ public class Launcher {
     private static Launcher instance;
     private final Properties props = new Properties();
     private Scanner sc;
+    private ChannelPermissionController channelPermissionController;
 
     private Launcher() {
 
@@ -53,6 +51,10 @@ public class Launcher {
 
     public ChannelController getChannelController() {
         return ChannelController.getInstance();
+    }
+
+    public ChannelPermissionController getChannelPermissionController() {
+        return ChannelPermissionController.getInstance();
     }
 
     public CommandParser getCommandParser() {
@@ -89,7 +91,7 @@ public class Launcher {
             inputCfg = new FileInputStream("config.properties");
             props.load(inputCfg);
 
-            ChannelController.getInstance(this);
+            ChannelController.getInstance();
             DiscordController.getInstance(this, props.getProperty("token"), props.getProperty("prefix"));
             FileController.getInstance(
                     props.getProperty("dbhost"),

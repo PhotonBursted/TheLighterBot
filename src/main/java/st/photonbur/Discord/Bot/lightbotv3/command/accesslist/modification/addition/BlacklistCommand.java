@@ -1,4 +1,4 @@
-package st.photonbur.Discord.Bot.lightbotv3.command.accesslist;
+package st.photonbur.Discord.Bot.lightbotv3.command.accesslist.modification.addition;
 
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Role;
@@ -13,7 +13,7 @@ public class BlacklistCommand extends AccesslistAdditionCommand {
     public BlacklistCommand() {
         super(new CommandAliasCollectionBuilder()
                 .addAliasPart("blacklist", "bl"),
-                "blacklist",
+                "blacklist", "blacklist",
                 LoggerFactory.getLogger(BlacklistCommand.class));
     }
 

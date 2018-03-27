@@ -11,10 +11,7 @@ import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.Paginator;
 import st.photonbur.Discord.Bot.lightbotv3.misc.menu.paginator.PaginatorBuilder;
 
 import java.awt.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
@@ -73,7 +70,7 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
         eb.setTitle("Command help - " + String.format("Page %d/%d", currPage, nPages), null)
                 .setColor(Color.WHITE)
                 .setDescription("The following commands are available:")
-                .setTimestamp(ZonedDateTime.of(LocalDateTime.now(), ZoneId.of("Europe/Amsterdam")).withZoneSameInstant(ZoneOffset.UTC));
+                .setTimestamp(Instant.now());
 
         for (String helpText : contents) {
             String[] helpElems = helpText.split("\\n>>\\|");
@@ -99,7 +96,9 @@ public class HelpCommand extends Command implements Paginator<MessageEmbed> {
             if (contentItem.length() > 2) {
                 if (i % groupSizeThreshold != 0) {
                     groups.set(groupID, String.format("%s%s%s",
-                            groups.get(groupID), groups.get(groupID).equals("") ? "" : itemSeparator, contentItem));
+                            groups.get(groupID),
+                            groups.get(groupID).equals("") ? "" : itemSeparator,
+                            contentItem));
                 } else {
                     groupID++;
                     groups.add(contentItem);
