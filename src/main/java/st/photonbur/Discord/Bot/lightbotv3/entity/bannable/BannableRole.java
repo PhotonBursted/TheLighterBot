@@ -15,4 +15,9 @@ public class BannableRole extends BannableEntity<Role> {
     public BannableRole(String entityId) {
         super(entityId, id -> Launcher.getInstance().getBot().getRoleById(id));
     }
+
+    @Override
+    public String getName() {
+        return get().getName();
+    }
 }

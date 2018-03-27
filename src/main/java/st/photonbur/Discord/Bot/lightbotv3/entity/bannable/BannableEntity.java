@@ -9,7 +9,7 @@ import java.util.function.Function;
 /**
  * Class used to better handle entities of which the access to the bot can be limited.
  */
-public class BannableEntity<T extends ISnowflake> implements ISnowflake {
+public abstract class BannableEntity<T extends ISnowflake> implements ISnowflake {
     protected final T entity;
     protected static final Launcher l = Launcher.getInstance();
 
@@ -38,6 +38,8 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
         return entity;
     }
 
+    public abstract String getName();
+
     @Override
     public long getIdLong() {
         return entity.getIdLong();
@@ -50,5 +52,13 @@ public class BannableEntity<T extends ISnowflake> implements ISnowflake {
     @Override
     public int hashCode() {
         return Objects.hash(entity);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s with ID %d (`%s`)",
+                get().getClass().getSimpleName().toLowerCase().replace("impl", ""),
+                getIdLong(),
+                getName());
     }
 }
