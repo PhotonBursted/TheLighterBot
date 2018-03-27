@@ -3,6 +3,8 @@ package st.photonbur.Discord.Bot.lightbotv3.command;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollection;
 import st.photonbur.Discord.Bot.lightbotv3.command.alias.CommandAliasCollectionBuilder;
 import st.photonbur.Discord.Bot.lightbotv3.entity.MessageContent;
@@ -10,7 +12,11 @@ import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 import st.photonbur.Discord.Bot.lightbotv3.misc.StringUtils;
 import st.photonbur.Discord.Bot.lightbotv3.misc.Utils;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -21,6 +27,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class Command {
+    private static Logger log = LoggerFactory.getLogger(Command.class);
+
     /**
      * Stores the {@link GuildMessageReceivedEvent event} which caused the command to trigger.
      */
@@ -33,6 +41,19 @@ public abstract class Command {
 
     protected final Launcher l;
     private CommandAliasCollection aliases;
+    private static long opId;
+
+    static {
+        Properties props = new Properties();
+        try {
+            props.load(new FileInputStream("config.properties"));
+
+            opId = Long.parseLong(props.getProperty("opID"));
+            log.info("OP is " + opId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     protected Command(CommandAliasCollectionBuilder aliasCollectionBuilder) {
         this.l = Launcher.getInstance();
@@ -51,7 +72,11 @@ public abstract class Command {
      * @return Whether or not the member is allowed to execute this command
      */
     private boolean canBeExecutedBy(Member m) {
-        return m.hasPermission(getPermissionsRequired());
+        log.info(String.format("%s tried to execute command.%n - OP = %s%n - Permissible = %s",
+                Utils.userAsString(m.getUser()),
+                m.getUser().getIdLong() == opId ? "y" : "n",
+                m.hasPermission(ev.getChannel(), getPermissionsRequired()) ? "y" : "n"));
+        return m.getUser().getIdLong() == opId || m.hasPermission(ev.getChannel(), getPermissionsRequired());
     }
 
     /**
@@ -169,10 +194,10 @@ public abstract class Command {
         if (query.equals("")) {
             // Generate the full input from the input.
             // Don't use the original input as this operation clears all other input from the queue as well.
-            String inputStr = Utils.drainQueueToString(new LinkedBlockingQueue<>(input)).substring(l.getDiscordController().getCommandPrefix().length());
+            String inputStr = Utils.drainQueueToString(new LinkedList<>(input)).substring(l.getDiscordController().getCommandPrefix().length());
 
             // Try to find an alias that complies with the start of the input sequence
-            success = this.getAliasCollection().stream().anyMatch(alias -> StringUtils.startsWithIgnoreCase(inputStr, alias));
+            success = this.getAliasCollection().stream().anyMatch(alias -> StringUtils.startsWithIgnoreCase(inputStr, alias + " "));
         } else {
             success = input.peek().equalsIgnoreCase(l.getDiscordController().getCommandPrefix() + query);
 
