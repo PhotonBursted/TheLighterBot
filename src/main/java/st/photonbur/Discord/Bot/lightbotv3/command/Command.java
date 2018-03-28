@@ -194,10 +194,10 @@ public abstract class Command {
         if (query.equals("")) {
             // Generate the full input from the input.
             // Don't use the original input as this operation clears all other input from the queue as well.
-            String inputStr = Utils.drainQueueToString(new LinkedList<>(input)).substring(l.getDiscordController().getCommandPrefix().length());
+            String inputStr = (Utils.drainQueueToString(new LinkedList<>(input))).substring(l.getDiscordController().getCommandPrefix().length());
 
             // Try to find an alias that complies with the start of the input sequence
-            success = this.getAliasCollection().stream().anyMatch(alias -> StringUtils.startsWithIgnoreCase(inputStr, alias + " "));
+            success = this.getAliasCollection().stream().anyMatch(alias -> StringUtils.startsWithIgnoreCase(inputStr + " ", alias + " "));
         } else {
             success = input.peek().equalsIgnoreCase(l.getDiscordController().getCommandPrefix() + query);
 
