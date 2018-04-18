@@ -23,6 +23,7 @@ public class TemporaryChannelSizeCommand extends Command {
 
     @Override
     protected void execute() {
+
         // Get the channels targeted by the issuer
         VoiceChannel vc = ev.getMember().getVoiceState().getChannel();
         TextChannel tc = l.getChannelController().getLinkedChannels().getForVoiceChannel(vc);
@@ -44,8 +45,14 @@ public class TemporaryChannelSizeCommand extends Command {
             return;
         }
 
+        if (input.size() == 0) {
+            handleError("No new size for the channel was specified!");
+            return;
+        }
+
         // If all of this is the case, getInstance the limit to be applied
         String limit = input.poll();
+        assert limit != null;
         if (limit.equals("remove")) {
             limit = "0";
         }
@@ -57,6 +64,11 @@ public class TemporaryChannelSizeCommand extends Command {
         }
 
         int intLimit = Integer.parseInt(limit);
+
+        if (intLimit == vc.getUserLimit()) {
+            handleError("No action was taken as the new limit was the same as currently set.");
+            return;
+        }
 
         // Get the user limit and set the new value
         vc.getManager()
@@ -71,7 +83,7 @@ public class TemporaryChannelSizeCommand extends Command {
                     vc.getName(), intLimit));
             l.getDiscordController().sendMessage(ev,
                     String.format("**%s** changed the user limit %sto **%s**.",
-                            ev.getAuthor().getName(),
+                            ev.getMember().getEffectiveName(),
                             tc.equals(ev.getChannel()) ? ("of **" + vc.getName() + "** ") : "",
                             intLimit),
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL);

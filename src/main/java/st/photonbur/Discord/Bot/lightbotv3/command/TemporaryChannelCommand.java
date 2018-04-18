@@ -49,6 +49,11 @@ public class TemporaryChannelCommand extends Command {
 
     @Override
     protected void execute() {
+        if (input.size() == 0) {
+            handleError("No name for the new channel was specified!");
+            return;
+        }
+
         // Gather the name of the channel from the remaining input
         String channelName = Utils.drainQueueToString(input);
 
