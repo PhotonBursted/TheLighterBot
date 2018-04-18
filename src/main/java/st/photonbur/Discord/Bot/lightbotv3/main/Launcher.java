@@ -18,7 +18,7 @@ import java.util.Scanner;
 public class Launcher {
     private static final Logger log = LoggerFactory.getLogger(Launcher.class);
 
-    public static final String VERSION = "3.2.2";
+    public static final String VERSION = "3.2.3";
 
     private static Launcher instance;
     private final Properties props = new Properties();

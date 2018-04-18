@@ -270,10 +270,16 @@ public class ChannelController extends ListenerAdapter {
                     }
                 } else {
                     if (isLinked(vcs[0])) {
-                        tcs[0].sendMessage("**" + member.getEffectiveName() + "** moved in from **" + vcs[1].getName() + "**").queue();
+                        tcs[0].sendMessage(String.format("**%s** moved in%s from **%s**",
+                                member.getEffectiveName(),
+                                linkedChannels.get(tcs[0]).size() > 1 ? "to " + vcs[0].getName() : "",
+                                vcs[1].getName())).queue();
                     }
                     if (isLinked(vcs[1])) {
-                        tcs[1].sendMessage("**" + member.getEffectiveName() + "** moved out to **" + vcs[0].getName() + "**").queue();
+                        tcs[1].sendMessage(String.format("**%s** moved out%s to **%s**",
+                                member.getEffectiveName(),
+                                linkedChannels.get(tcs[1]).size() > 1 ? " from " + vcs[1].getName() : "",
+                                vcs[0].getName())).queue();
                     }
                 }
         }
