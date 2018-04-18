@@ -54,7 +54,7 @@ public class TemporaryChannelTopicCommand extends Command {
             l.getDiscordController().sendMessage(ev,
                     String.format("**%s** changed the topic%s.",
                             ev.getAuthor().getName(),
-                            tc.equals(ev.getChannel()) ? ("of **" + vc.getName() + "** ") : ""),
+                            !tc.equals(ev.getChannel()) ? ("of **" + tc.getAsMention() + "**") : ""),
                     DiscordController.AUTOMATIC_REMOVAL_INTERVAL);
             tc.getManager().setTopic(description).reason(Utils.userAsString(ev.getAuthor()) + " requested a change of topic for this channel.").queue();
         }
