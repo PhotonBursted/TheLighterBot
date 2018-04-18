@@ -60,7 +60,7 @@ public class LoggerUtils extends ListenerAdapter {
             if (ev.getGuild().getSelfMember().hasPermission(ev.getChannel(), Permission.MESSAGE_MANAGE)) {
                 ev.getMessage().delete().queue(successOperation);
             } else {
-                successOperation.accept(null);
+                if (successOperation != null) successOperation.accept(null);
             }
 
             // Mark the event as last handled
