@@ -3,8 +3,6 @@ package st.photonbur.Discord.Bot.lightbotv3.controller;
 import net.dv8tion.jda.core.Permission;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.managers.ChannelManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import st.photonbur.Discord.Bot.lightbotv3.entity.bannable.BannableEntity;
 import st.photonbur.Discord.Bot.lightbotv3.main.Launcher;
 
@@ -12,7 +10,6 @@ import java.util.HashMap;
 import java.util.Set;
 
 public class ChannelPermissionController {
-    private static final Logger log = LoggerFactory.getLogger(ChannelPermissionController.class);
     private static ChannelPermissionController instance;
     /**
      * Instance of the launcher for easy access to other classes
@@ -50,7 +47,6 @@ public class ChannelPermissionController {
      * @param c     The channel to apply permissions to
      * @param perms The permissions to apply
      */
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void applyAccessList(Channel c, Permission... perms) {
         Guild g = c.getGuild();
 
@@ -80,21 +76,26 @@ public class ChannelPermissionController {
             }
         }
 
-        manager.reason("Applying initial access lists").queue();
+        manager.reason("Applying access lists").queue();
     }
 
+    /**
+     * <p>Changes a channel group from public to private.</p>
+     * <p>This encompasses shielding the seeing of these channels again, except for the people in the voice channel.</p>
+     * @param tc The text channel to make private
+     * @param vc The voice channel to make private
+     */
     public void changeToPrivateFromPublic(TextChannel tc, VoiceChannel vc) {
-        checkCorrectLastState(tc, AccessState.PUBLIC);
+        if (incorrectLastState(tc, AccessState.PUBLIC)) return;
 
         ChannelManager manager = tc.getManager();
 
         // Revoke access for non-members of the voice channel should the channel be limited
-        manager = manager
-                .putPermissionOverride(tc.getGuild().getPublicRole(), 0L, Permission.getRaw(Permission.MESSAGE_READ))
-                .putPermissionOverride(tc.getGuild().getSelfMember(), Permission.getRaw(Permission.MESSAGE_READ), 0L);
+        manager = manager.putPermissionOverride(tc.getGuild().getPublicRole(), 0L, Permission.getRaw(Permission.MESSAGE_READ));
 
-        for (Member m : vc.getMembers())
+        for (Member m : vc.getMembers()) {
             manager = manager.putPermissionOverride(m, Permission.getRaw(Permission.MESSAGE_READ), 0L);
+        }
 
         manager.reason("The channel was limited by a command from a temporary channel.").queue();
 
@@ -102,19 +103,17 @@ public class ChannelPermissionController {
     }
 
     public void changeToPublicFromPrivate(TextChannel tc, VoiceChannel vc) {
-        checkCorrectLastState(tc, AccessState.PRIVATE);
+        if (incorrectLastState(tc, AccessState.PRIVATE)) return;
 
         ChannelManager manager = tc.getManager();
 
         // Remove all permissions that were blocking other users from seeing the channel
-        if (!l.getAccesslistController().isBlacklisted(tc.getGuild().getPublicRole())) {
+        if (l.getAccesslistController().isWhitelisted(tc.getGuild().getPublicRole())) {
             manager = manager.putPermissionOverride(tc.getGuild().getPublicRole(), Permission.getRaw(Permission.MESSAGE_READ), 0L);
         }
 
-        manager = manager.putPermissionOverride(tc.getGuild().getSelfMember(), 0L, Permission.getRaw(Permission.MESSAGE_READ));
-
         for (Member m : vc.getMembers()) {
-            manager = manager.putPermissionOverride(m, 0L, Permission.getRaw(Permission.MESSAGE_READ));
+            manager = manager.putPermissionOverride(m, Permission.getRaw(Permission.MESSAGE_READ), 0L);
         }
 
         manager.reason("The channel had its limit removed by a command from a temporary channel").queue();
@@ -123,7 +122,7 @@ public class ChannelPermissionController {
     }
 
     public void changeToPublicFromNew(TextChannel tc, Permission... perms) {
-        checkCorrectLastState(tc, null);
+        if (incorrectLastState(tc, null)) return;
 
         applyAccessList(tc, perms);
 
@@ -134,10 +133,8 @@ public class ChannelPermissionController {
         applyAccessList(vc, perms);
     }
 
-    private void checkCorrectLastState(TextChannel tc, AccessState state) {
-        if (currentStates.get(tc) != state) {
-            log.warn("Wrong method call was used! Permissions may be wrong for channel.");
-        }
+    private boolean incorrectLastState(TextChannel tc, AccessState state) {
+        return currentStates.get(tc) != state;
     }
 
     public enum AccessState {
