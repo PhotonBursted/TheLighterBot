@@ -6,7 +6,7 @@
 
 <groupId>st.photonbur.Discord.Bot</groupId>
 <artifactId>LightBot</artifactId>
-<version>3.2.0</version>
+<version>3.2.2</version>
     <build>
         <plugins>
             <plugin>
